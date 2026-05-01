@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-  DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCorners
+  DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCorners, useDroppable
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ArrowLeft, Plus, Loader2, GripVertical, Calendar } from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, GripVertical, Calendar, Search, CheckSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { setTasks, addTask, updateTask } from '../store/taskSlice';
 import { getProjectTasks, updateTaskStatus, createTask } from '../api/tasks';
@@ -16,68 +16,52 @@ import TaskForm from '../components/Tasks/TaskForm';
 import { format, isPast } from 'date-fns';
 
 const COLUMNS = ['To Do', 'In Progress', 'In Review', 'Done'];
-const COLUMN_STYLES = {
-  'To Do': { bg: 'rgba(255,255,255,0.06)', color: '#B1B4BA', dot: '#B1B4BA' },
-  'In Progress': { bg: 'rgba(43,140,220,0.15)', color: '#2B8CDC', dot: '#2B8CDC' },
-  'In Review': { bg: 'rgba(255,162,0,0.15)', color: '#FFA200', dot: '#FFA200' },
-  Done: { bg: 'rgba(0,213,176,0.15)', color: '#00D5B0', dot: '#00D5B0' },
-};
-const PRIORITY_COLORS = { Low: '#B1B4BA', Medium: '#2B8CDC', High: '#FFA200', Urgent: '#FF3F6D' };
+const PRIORITY_COLORS = { Low: '#9ca3af', Medium: '#3b82f6', High: '#f59e0b', Urgent: '#ef4444' };
 
-function TaskCard({ task, isDragging = false }) {
+function TaskCard({ task, isDragging = false, dragListeners, dragAttributes }) {
+  const navigate = useNavigate();
   const isOverdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== 'Done';
   
   return (
-    <div className="card" style={{ 
-      padding: '16px', 
-      cursor: isDragging ? 'grabbing' : 'grab',
-      opacity: isDragging ? 0.6 : 1,
-      transform: isDragging ? 'rotate(2deg) scale(1.02)' : 'none',
-      boxShadow: isDragging ? '0 24px 48px rgba(0,0,0,0.5)' : '0 2px 8px rgba(0,0,0,0.1)',
-      transition: isDragging ? 'none' : 'transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 200ms ease, background 200ms ease',
-      border: '1px solid rgba(255,255,255,0.06)',
-      position: 'relative',
-      zIndex: isDragging ? 50 : 1
-    }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-        <GripVertical size={16} color="#B1B4BA" style={{ marginTop: 2, flexShrink: 0, opacity: 0.5 }} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <Link to={`/tasks/${task._id}`} onClick={(e) => e.stopPropagation()}
-            style={{ 
-              fontSize: 14, fontWeight: 600, color: '#F2F4F7', 
-              textDecoration: 'none', display: 'block', marginBottom: 8,
-              lineHeight: 1.4
-            }}
-            className="line-clamp-2"
-            onMouseEnter={(e) => e.target.style.color = '#00D5B0'}
-            onMouseLeave={(e) => e.target.style.color = '#F2F4F7'}
-          >
+    <div 
+      onClick={() => navigate(`/tasks/${task._id}`)}
+      className={`card mb-3 !p-4 cursor-pointer hover:border-primary-300 dark:hover:border-primary-700 transition-colors ${isDragging ? 'opacity-50 scale-105 ring-2 ring-primary-500 shadow-xl' : ''}`}
+    >
+      <div className="flex items-start gap-3">
+        <div 
+          {...dragAttributes} 
+          {...dragListeners} 
+          onClick={(e) => e.stopPropagation()} 
+          className="mt-1 flex-shrink-0 cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 transition-colors"
+        >
+          <GripVertical size={16} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className="text-body-sm font-bold text-neutral-900 dark:text-neutral-50 block mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-2 leading-snug">
             {task.title}
-          </Link>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ 
-              display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, 
-              color: PRIORITY_COLORS[task.priority] || '#B1B4BA', 
-              background: 'rgba(255,255,255,0.04)', padding: '2px 6px', borderRadius: 6
-            }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: PRIORITY_COLORS[task.priority] || '#B1B4BA', boxShadow: `0 0 6px ${PRIORITY_COLORS[task.priority] || '#B1B4BA'}` }} />
+          </h4>
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="badge" style={{ background: `${PRIORITY_COLORS[task.priority]}15`, color: PRIORITY_COLORS[task.priority] }}>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: PRIORITY_COLORS[task.priority] }} />
               {task.priority}
             </span>
+            {task.labels && task.labels.map(label => (
+              <span key={label} className="badge bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
+                {label}
+              </span>
+            ))}
             {task.dueDate && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: isOverdue ? '#FF3F6D' : '#B1B4BA', background: isOverdue ? 'rgba(255,63,109,0.1)' : 'transparent', padding: '2px 6px', borderRadius: 6 }}>
+              <span className={`flex items-center gap-1 text-[11px] font-semibold ${isOverdue ? 'text-error-600 dark:text-error-400' : 'text-neutral-500'}`}>
                 <Calendar size={12} /> {format(new Date(task.dueDate), 'MMM d')}
               </span>
             )}
           </div>
           {task.assignedTo && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12 }}>
-              <div style={{
-                width: 20, height: 20, borderRadius: '50%', background: 'linear-gradient(135deg, #2B8CDC 0%, #1a5c96 100%)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F2F4F7', fontSize: 10, fontWeight: 700
-              }}>
+            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-800">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-[10px] font-bold">
                 {task.assignedTo?.name ? task.assignedTo.name.charAt(0).toUpperCase() : '?'}
               </div>
-              <span style={{ fontSize: 11, color: '#B1B4BA', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span className="text-[11px] text-neutral-500 font-medium truncate">
                 {task.assignedTo.name}
               </span>
             </div>
@@ -90,44 +74,48 @@ function TaskCard({ task, isDragging = false }) {
 
 function SortableCard({ task }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task._id, data: { type: 'task', task } });
+  const style = { transform: CSS.Translate.toString(transform), transition };
   return (
-    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} {...attributes} {...listeners}>
-      <TaskCard task={task} isDragging={isDragging} />
+    <div ref={setNodeRef} style={style}>
+      <TaskCard task={task} isDragging={isDragging} dragListeners={listeners} dragAttributes={attributes} />
     </div>
   );
 }
 
 function Column({ status, tasks, onAdd }) {
-  const style = COLUMN_STYLES[status];
   const colTasks = Array.isArray(tasks) ? tasks : [];
+  const { setNodeRef, isOver } = useDroppable({ id: status });
   
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', width: 300, flexShrink: 0 }}>
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
-        padding: '12px 16px', borderRadius: 12, marginBottom: 16,
-        background: style.bg, border: `1px solid ${style.bg.replace('0.15', '0.25')}`
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: style.dot, boxShadow: `0 0 8px ${style.dot}` }} />
-          <span style={{ fontSize: 14, fontWeight: 600, color: style.color }}>{status}</span>
-          <span style={{ fontSize: 11, fontWeight: 600, color: '#F2F4F7', background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 999 }}>
+    <div 
+      ref={setNodeRef} 
+      className={`flex flex-col w-80 flex-shrink-0 bg-neutral-50 dark:bg-neutral-950/50 rounded-xl p-md border transition-colors ${
+        isOver ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/10' : 'border-neutral-200 dark:border-neutral-800'
+      }`}
+    >
+      <div className="flex items-center justify-between mb-lg px-1">
+        <div className="flex items-center gap-2">
+          <h3 className="text-body font-bold text-neutral-900 dark:text-neutral-50">{status}</h3>
+          <span className="text-[11px] font-bold bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 px-2 py-0.5 rounded-full">
             {colTasks.length}
           </span>
         </div>
-        <button onClick={() => onAdd(status)} style={{
-          background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, color: style.color, borderRadius: 6,
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+        <button 
+          onClick={() => onAdd(status)} 
+          className="p-1 hover:bg-white dark:hover:bg-neutral-800 rounded-md transition-all text-neutral-400 hover:text-primary-500 shadow-sm border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700"
         >
-          <Plus size={16} />
+          <Plus size={18} />
         </button>
       </div>
       <SortableContext items={colTasks.map(t => t._id)} strategy={verticalListSortingStrategy}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minHeight: 200 }}>
+        <div className="flex flex-col flex-1 min-h-[200px]">
           {colTasks.map(task => <SortableCard key={task._id} task={task} />)}
+          {colTasks.length === 0 && (
+            <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-lg py-12 opacity-40">
+              <CheckSquare size={32} className="text-neutral-400 mb-2" />
+              <p className="text-[11px] font-medium">Empty column</p>
+            </div>
+          )}
         </div>
       </SortableContext>
     </div>
@@ -149,14 +137,19 @@ export default function TaskBoard() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   useEffect(() => {
+    // Clear stale tasks from previous project before loading
+    dispatch(setTasks([]));
+    setLoading(true);
     Promise.all([projectApi.getProject(projectId), getProjectTasks(projectId, { limit: 200 })])
       .then(([p, t]) => {
         setProject(p.data.project);
-        setMembers(p.data.members);
-        dispatch(setTasks(t.data.tasks));
+        setMembers(p.data.members || []);
+        dispatch(setTasks(t.data.tasks || []));
       })
       .catch(() => toast.error('Failed to load board'))
       .finally(() => setLoading(false));
+    // Clear tasks when leaving the board
+    return () => dispatch(setTasks([]));
   }, [projectId, dispatch]);
 
   const tasksList = Array.isArray(tasks) ? tasks : [];
@@ -166,7 +159,10 @@ export default function TaskBoard() {
     if (filters.search && t.title && !t.title.toLowerCase().includes(filters.search.toLowerCase())) return false;
     return true;
   });
-  const byStatus = COLUMNS.reduce((a, c) => { a[c] = filtered.filter(t => t.status === c); return a; }, {});
+  const byStatus = COLUMNS.reduce((a, c) => { 
+    a[c] = filtered.filter(t => t.status === c); 
+    return a; 
+  }, {});
 
   const handleDragEnd = async ({ active, over }) => {
     setActiveTask(null);
@@ -192,55 +188,90 @@ export default function TaskBoard() {
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
   };
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}><Loader2 size={32} color="#00D5B0" className="animate-spin" /></div>;
+  if (loading) return (
+    <div className="flex items-center justify-center h-[60vh]">
+      <Loader2 size={40} className="animate-spin text-primary-500" />
+    </div>
+  );
 
   return (
-    <div className="animate-enter" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexShrink: 0 }}>
+    <div className="page-enter flex flex-col h-full gap-lg">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <Link to={`/projects/${projectId}`} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8, color: '#B1B4BA',
-            textDecoration: 'none', fontSize: 13, marginBottom: 8, transition: 'color 150ms ease'
-          }} onMouseEnter={(e) => e.target.style.color = '#F2F4F7'} onMouseLeave={(e) => e.target.style.color = '#B1B4BA'}>
-            <ArrowLeft size={14} /> {project?.name}
+          <Link 
+            to={`/projects/${projectId}`} 
+            className="inline-flex items-center gap-2 text-neutral-500 hover:text-primary-600 font-medium text-body-sm transition-colors mb-2"
+          >
+            <ArrowLeft size={16} /> {project?.name}
           </Link>
-          <h1 className="page-title">Task Board</h1>
+          <h1 className="text-display leading-none">Task Board</h1>
         </div>
-        <button onClick={() => { setDefaultStatus('To Do'); setShowCreate(true); }} className="btn btn-primary btn-md">
-          <Plus size={18} /> Add Task
+        <button 
+          onClick={() => { setDefaultStatus('To Do'); setShowCreate(true); }} 
+          className="btn-primary shadow-lg shadow-primary-500/20"
+        >
+          <Plus size={20} /> Add Task
         </button>
       </div>
 
-      <div className="card stagger-1" style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, flexShrink: 0, flexWrap: 'wrap', padding: '16px 20px' }}>
-        <input value={filters.search} onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
-          className="input" style={{ width: 200, padding: '8px 12px' }} placeholder="Search tasks…" />
-        <select value={filters.priority} onChange={e => setFilters(f => ({ ...f, priority: e.target.value }))} className="input" style={{ width: 160, padding: '8px 12px', cursor: 'pointer' }}>
-          <option value="" style={{ background: '#111827' }}>All priorities</option>
-          {['Low','Medium','High','Urgent'].map(p => <option key={p} value={p} style={{ background: '#111827' }}>{p}</option>)}
-        </select>
-        <select value={filters.assignedTo} onChange={e => setFilters(f => ({ ...f, assignedTo: e.target.value }))} className="input" style={{ width: 180, padding: '8px 12px', cursor: 'pointer' }}>
-          <option value="" style={{ background: '#111827' }}>All members</option>
-          {members.map(m => <option key={m.user._id} value={m.user._id} style={{ background: '#111827' }}>{m.user.name}</option>)}
-        </select>
-        {(filters.search || filters.priority || filters.assignedTo) && (
-          <button onClick={() => setFilters({ priority:'', assignedTo:'', search:'' })} className="btn btn-ghost btn-sm">Clear Filters</button>
-        )}
+      {/* Filters Bar */}
+      <div className="flex flex-wrap items-center gap-md bg-white dark:bg-neutral-900 p-md rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
+        <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+          <div className="bg-neutral-100 dark:bg-neutral-800 rounded-md p-2">
+            <Search size={18} className="text-neutral-500" />
+          </div>
+          <input 
+            value={filters.search}
+            onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
+            placeholder="Search tasks..."
+            className="bg-transparent border-none outline-none text-body-sm w-full font-medium"
+          />
+        </div>
+        
+        <div className="flex items-center gap-md flex-wrap">
+          <select 
+            value={filters.priority}
+            onChange={e => setFilters(f => ({ ...f, priority: e.target.value }))}
+            className="bg-neutral-50 dark:bg-neutral-800 border-none rounded-md px-3 py-2 text-body-sm font-semibold outline-none focus:ring-2 focus:ring-primary-500/20"
+          >
+            <option value="">All Priorities</option>
+            {['Low', 'Medium', 'High', 'Urgent'].map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+
+          <select 
+            value={filters.assignedTo}
+            onChange={e => setFilters(f => ({ ...f, assignedTo: e.target.value }))}
+            className="bg-neutral-50 dark:bg-neutral-800 border-none rounded-md px-3 py-2 text-body-sm font-semibold outline-none focus:ring-2 focus:ring-primary-500/20"
+          >
+            <option value="">All Assignees</option>
+            {members.map(m => <option key={m.user._id} value={m.user._id}>{m.user.name}</option>)}
+          </select>
+
+          {(filters.priority || filters.assignedTo || filters.search) && (
+            <button 
+              onClick={() => setFilters({ priority: '', assignedTo: '', search: '' })}
+              className="text-body-sm font-bold text-primary-600 hover:text-primary-700 underline px-2 transition-colors"
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="stagger-2" style={{ flex: 1, overflowX: 'auto', paddingBottom: 24, paddingRight: 24 }}>
-        <DndContext sensors={sensors} collisionDetection={closestCorners}
-          onDragStart={({ active }) => setActiveTask(tasksList.find(t => t._id === active.id) || null)}
-          onDragEnd={handleDragEnd}>
-          <div style={{ display: 'flex', gap: 24, paddingBottom: 16 }}>
+      {/* Board Scrollable Area */}
+      <div className="flex-1 overflow-x-auto pb-4">
+        <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd} onDragStart={({ active }) => setActiveTask(tasksList.find(t => t._id === active.id) || null)}>
+          <div className="flex gap-lg h-full min-h-[500px]">
             {COLUMNS.map(col => <Column key={col} status={col} tasks={byStatus[col]} onAdd={(s) => { setDefaultStatus(s); setShowCreate(true); }} />)}
           </div>
-          <DragOverlay>{activeTask ? <TaskCard task={activeTask} isDragging /> : null}</DragOverlay>
+          <DragOverlay>
+            {activeTask ? <div className="w-80 rotate-2"><TaskCard task={activeTask} isDragging /></div> : null}
+          </DragOverlay>
         </DndContext>
       </div>
 
-      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Create Task" size="lg">
-        <TaskForm projectId={projectId} members={members} defaultStatus={defaultStatus}
-          onSubmit={handleCreate} onCancel={() => setShowCreate(false)} />
+      <Modal show={showCreate} onClose={() => setShowCreate(false)} title="Create New Task">
+        <TaskForm members={members} defaultStatus={defaultStatus} onSubmit={handleCreate} onCancel={() => setShowCreate(false)} />
       </Modal>
     </div>
   );

@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   ArrowLeft, Edit, Trash2, Calendar, User, Flag, Clock,
-  MessageSquare, Loader2, Send, Tag
+  MessageSquare, Loader2, Send, Tag, ChevronRight, CheckCircle, Shield
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { updateTask, removeTask } from '../store/taskSlice';
@@ -101,96 +101,107 @@ export default function TaskDetail() {
   const priorityStyle = PRIORITY_BADGE[task.priority] || PRIORITY_BADGE.Low;
 
   return (
-    <div className="animate-enter" style={{ maxWidth: 1000, margin: '0 auto', paddingBottom: 40, display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* Header Actions */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <button onClick={() => navigate(-1)} style={{
-          display: 'flex', alignItems: 'center', gap: 8, background: 'transparent', border: 'none',
-          color: '#B1B4BA', cursor: 'pointer', fontSize: 14, transition: 'color 150ms ease'
-        }} onMouseEnter={(e) => e.currentTarget.style.color = '#F2F4F7'} onMouseLeave={(e) => e.currentTarget.style.color = '#B1B4BA'}>
+    <div className="page-enter max-w-6xl mx-auto flex flex-col gap-lg pb-xl">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-neutral-500 hover:text-primary-600 font-medium text-body-sm transition-colors w-fit">
           <ArrowLeft size={16} /> Back
         </button>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button onClick={() => setShowEdit(true)} className="btn btn-secondary btn-sm">
-            <Edit size={16} /> Edit
+        <div className="flex gap-3">
+          <button onClick={() => setShowEdit(true)} className="btn-secondary">
+            <Edit size={16} /> Edit Task
           </button>
-          <button onClick={handleDelete} className="btn btn-danger btn-sm">
+          <button onClick={handleDelete} className="btn-danger">
             <Trash2 size={16} /> Delete
           </button>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, alignItems: 'start' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-lg items-start">
         {/* Main Content */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, gridColumn: 'span 2' }}>
-          <div className="card stagger-1" style={{ padding: 32 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 700, color: '#F2F4F7', margin: '0 0 8px 0', lineHeight: 1.3 }}>{task.title}</h1>
-            {task.project && (
-              <Link to={`/projects/${task.project._id}/board`} style={{
-                fontSize: 14, color: '#00D5B0', textDecoration: 'none', display: 'inline-block', marginBottom: 24
-              }}>
-                {task.project.name}
-              </Link>
-            )}
+        <div className="lg:col-span-2 flex flex-col gap-lg">
+          <div className="card">
+            <div className="mb-6">
+              {task.project && (
+                <Link to={`/projects/${task.project._id}/board`} className="text-[11px] font-black uppercase tracking-widest text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1 mb-2">
+                  {task.project.name} <ChevronRight size={12} />
+                </Link>
+              )}
+              <h1 className="text-display leading-tight">{task.title}</h1>
+            </div>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
-              <span style={{ padding: '4px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: statusStyle.bg, color: statusStyle.color, border: `1px solid ${statusStyle.border}` }}>
+            <div className="flex flex-wrap gap-3 mb-8">
+              <span className="badge px-3 py-1" style={{ background: statusStyle.bg, color: statusStyle.color, borderColor: statusStyle.border }}>
                 {task.status}
               </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: priorityStyle.bg, color: priorityStyle.color, border: `1px solid ${priorityStyle.border}` }}>
-                <Flag size={12} /> {task.priority}
+              <span className="badge px-3 py-1" style={{ background: priorityStyle.bg, color: priorityStyle.color, borderColor: priorityStyle.border }}>
+                <Flag size={12} className="mr-1" /> {task.priority}
               </span>
               {task.labels?.map(label => (
-                <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 8, fontSize: 12, fontWeight: 500, background: 'rgba(43,140,220,0.1)', color: '#2B8CDC', border: '1px solid rgba(43,140,220,0.2)' }}>
+                <span key={label} className="badge bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 border border-primary-100 dark:border-primary-800">
                   <Tag size={12} /> {label}
                 </span>
               ))}
             </div>
 
-            <div style={{ color: '#F2F4F7', fontSize: 15, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-              {task.description || <span style={{ color: '#B1B4BA', fontStyle: 'italic' }}>No description provided.</span>}
+            <div className="prose dark:prose-invert max-w-none">
+              <h4 className="text-body font-bold mb-3">Description</h4>
+              <div className="text-neutral-700 dark:text-neutral-300 text-body-sm leading-relaxed bg-neutral-50 dark:bg-neutral-800/50 p-lg rounded-xl border border-neutral-100 dark:border-neutral-800 min-h-[120px] whitespace-pre-wrap">
+                {task.description || <span className="text-neutral-400 italic font-medium">No description provided for this task.</span>}
+              </div>
             </div>
           </div>
 
-          {/* Comments */}
-          <div className="card stagger-2" style={{ padding: 32 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#F2F4F7', margin: '0 0 24px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <MessageSquare size={18} color="#00D5B0" /> Comments <span style={{ color: '#B1B4BA', fontWeight: 400 }}>({comments.length})</span>
+          {/* Comments Section */}
+          <div className="card">
+            <h3 className="text-h3 font-bold mb-8 flex items-center gap-2">
+              <MessageSquare size={20} className="text-primary-500" /> Discussion
+              <span className="ml-2 text-label bg-neutral-100 dark:bg-neutral-800 text-neutral-500 px-2 py-0.5 rounded-full font-bold">
+                {comments.length}
+              </span>
             </h3>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
+            <div className="space-y-6 mb-8">
               {comments.length === 0 ? (
-                <p style={{ color: '#B1B4BA', fontSize: 14, margin: 0 }}>No comments yet. Be the first!</p>
+                <div className="text-center py-10 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl border-2 border-dashed border-neutral-100 dark:border-neutral-800">
+                  <p className="text-body-sm text-neutral-400 font-medium">No comments yet. Start the conversation!</p>
+                </div>
               ) : (
                 comments.map((c) => (
-                  <div key={c._id} style={{ display: 'flex', gap: 16 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #2B8CDC 0%, #1a5c96 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F2F4F7', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
+                  <div key={c._id} className="flex gap-4 group">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-xs font-black shrink-0 shadow-sm">
                       {c.author?.name ? c.author.name.charAt(0).toUpperCase() : '?'}
                     </div>
-                    <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 16 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: '#F2F4F7' }}>{c.author?.name}</span>
-                        <span style={{ fontSize: 12, color: '#B1B4BA' }}>{formatDistanceToNow(new Date(c.createdAt), { addSuffix: true })}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="text-body-sm font-bold text-neutral-900 dark:text-neutral-100">{c.author?.name}</h4>
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase">{formatDistanceToNow(new Date(c.createdAt), { addSuffix: true })}</span>
                       </div>
-                      <p style={{ margin: 0, fontSize: 14, color: '#F2F4F7', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{c.text}</p>
+                      <div className="bg-neutral-50 dark:bg-neutral-800 p-4 rounded-xl rounded-tl-none border border-neutral-100 dark:border-neutral-700 text-body-sm text-neutral-700 dark:text-neutral-300 leading-relaxed whitespace-pre-wrap shadow-sm">
+                        {c.text}
+                      </div>
                     </div>
                   </div>
                 ))
               )}
             </div>
 
-            <form onSubmit={handleComment} style={{ display: 'flex', gap: 12 }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #2B8CDC 0%, #1a5c96 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F2F4F7', fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
+            <form onSubmit={handleComment} className="mt-8 flex gap-4 p-2 bg-neutral-50 dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 focus-within:ring-2 focus-within:ring-primary-500/20 transition-all">
+              <div className="w-10 h-10 rounded-full bg-primary-500 flex items-center justify-center text-white font-bold shrink-0 shadow-sm hidden sm:flex">
                 {user?.name ? user.name.charAt(0).toUpperCase() : '?'}
               </div>
-              <div style={{ flex: 1, position: 'relative' }}>
-                <input value={commentText} onChange={(e) => setCommentText(e.target.value)}
-                  className="input" style={{ paddingRight: 44, height: 40 }} placeholder="Add a comment…" />
-                <button type="submit" disabled={submittingComment || !commentText.trim()} style={{
-                  position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
-                  background: 'transparent', border: 'none', cursor: submittingComment || !commentText.trim() ? 'not-allowed' : 'pointer',
-                  color: submittingComment || !commentText.trim() ? '#B1B4BA' : '#00D5B0', display: 'flex', alignItems: 'center', padding: 4
-                }}>
+              <div className="flex-1 flex gap-2">
+                <input 
+                  value={commentText} 
+                  onChange={(e) => setCommentText(e.target.value)}
+                  className="bg-transparent border-none outline-none text-body-sm w-full font-medium px-2" 
+                  placeholder="Share your thoughts..." 
+                />
+                <button 
+                  type="submit" 
+                  disabled={submittingComment || !commentText.trim()} 
+                  className="p-2.5 bg-primary-500 text-white rounded-xl hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md active:scale-95"
+                >
                   <Send size={18} />
                 </button>
               </div>
@@ -198,63 +209,82 @@ export default function TaskDetail() {
           </div>
         </div>
 
-        {/* Sidebar Details */}
-        <div className="card stagger-3" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 600, color: '#F2F4F7', margin: 0 }}>Details</h3>
-
-          <div style={{ display: 'flex', gap: 12 }}>
-            <User size={18} color="#B1B4BA" style={{ flexShrink: 0, marginTop: 2 }} />
-            <div>
-              <p style={{ fontSize: 12, color: '#B1B4BA', margin: '0 0 4px 0' }}>Assigned to</p>
-              {task.assignedTo ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'linear-gradient(135deg, #2B8CDC 0%, #1a5c96 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F2F4F7', fontSize: 10, fontWeight: 700 }}>
-                    {task.assignedTo?.name ? task.assignedTo.name.charAt(0).toUpperCase() : '?'}
-                  </div>
-                  <span style={{ fontSize: 14, color: '#F2F4F7', fontWeight: 500 }}>{task.assignedTo.name}</span>
+        {/* Sidebar */}
+        <div className="flex flex-col gap-lg">
+          <div className="card">
+            <h3 className="text-[11px] font-black uppercase tracking-widest text-neutral-400 mb-6">Task Information</h3>
+            
+            <div className="space-y-6">
+              <div className="flex gap-4">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-500 shrink-0">
+                  <User size={20} />
                 </div>
-              ) : <p style={{ fontSize: 14, color: '#B1B4BA', margin: 0 }}>Unassigned</p>}
-            </div>
-          </div>
+                <div>
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-tight mb-1">Assignee</p>
+                  {task.assignedTo ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-primary-500 flex items-center justify-center text-white text-[10px] font-black">
+                        {task.assignedTo?.name ? task.assignedTo.name.charAt(0).toUpperCase() : '?'}
+                      </div>
+                      <span className="text-body-sm font-bold text-neutral-900 dark:text-neutral-100">{task.assignedTo.name}</span>
+                    </div>
+                  ) : <span className="text-body-sm font-bold text-neutral-400 italic">Unassigned</span>}
+                </div>
+              </div>
 
-          {task.dueDate && (
-            <div style={{ display: 'flex', gap: 12 }}>
-              <Calendar size={18} color={isOverdue ? '#FF3F6D' : '#B1B4BA'} style={{ flexShrink: 0, marginTop: 2 }} />
-              <div>
-                <p style={{ fontSize: 12, color: '#B1B4BA', margin: '0 0 4px 0' }}>Due date</p>
-                <p style={{ fontSize: 14, color: isOverdue ? '#FF3F6D' : '#F2F4F7', fontWeight: 500, margin: 0 }}>
-                  {format(new Date(task.dueDate), 'MMM d, yyyy')} {isOverdue && '(Overdue)'}
-                </p>
+              <div className="flex gap-4">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isOverdue ? 'bg-error-50 dark:bg-error-900/20 text-error-500' : 'bg-orange-50 dark:bg-orange-900/20 text-orange-500'}`}>
+                  <Calendar size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-tight mb-1">Due Date</p>
+                  {task.dueDate ? (
+                    <p className={`text-body-sm font-bold ${isOverdue ? 'text-error-600 dark:text-error-400 underline decoration-wavy decoration-error-500/50' : 'text-neutral-900 dark:text-neutral-100'}`}>
+                      {format(new Date(task.dueDate), 'MMMM do, yyyy')}
+                      {isOverdue && <span className="block text-[10px] font-black text-error-500 uppercase mt-0.5 tracking-wider">Overdue</span>}
+                    </p>
+                  ) : <span className="text-body-sm font-bold text-neutral-400">No deadline</span>}
+                </div>
+              </div>
+
+              {task.completedAt && (
+                <div className="flex gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-success-50 dark:bg-success-900/20 flex items-center justify-center text-success-500 shrink-0">
+                    <CheckCircle size={20} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-tight mb-1">Completed On</p>
+                    <p className="text-body-sm font-bold text-success-600 dark:text-success-400">{format(new Date(task.completedAt), 'MMM d, yyyy')}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-4">
+                <div className="w-10 h-10 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 flex items-center justify-center text-neutral-400 shrink-0">
+                  <Shield size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-tight mb-1">Creator</p>
+                  <p className="text-body-sm font-bold text-neutral-900 dark:text-neutral-100">{task.createdBy?.name || 'Unknown'}</p>
+                </div>
               </div>
             </div>
-          )}
 
-          {task.completedAt && (
-            <div style={{ display: 'flex', gap: 12 }}>
-              <Clock size={18} color="#00D5B0" style={{ flexShrink: 0, marginTop: 2 }} />
-              <div>
-                <p style={{ fontSize: 12, color: '#B1B4BA', margin: '0 0 4px 0' }}>Completed</p>
-                <p style={{ fontSize: 14, color: '#00D5B0', fontWeight: 500, margin: 0 }}>{format(new Date(task.completedAt), 'MMM d, yyyy')}</p>
+            <div className="mt-8 pt-6 border-t border-neutral-100 dark:border-neutral-800 space-y-2">
+              <div className="flex justify-between items-center text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
+                <span>Created</span>
+                <span className="text-neutral-500">{formatDistanceToNow(new Date(task.createdAt), { addSuffix: true })}</span>
+              </div>
+              <div className="flex justify-between items-center text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
+                <span>Last Update</span>
+                <span className="text-neutral-500">{formatDistanceToNow(new Date(task.updatedAt), { addSuffix: true })}</span>
               </div>
             </div>
-          )}
-
-          <div style={{ display: 'flex', gap: 12 }}>
-            <User size={18} color="#B1B4BA" style={{ flexShrink: 0, marginTop: 2 }} />
-            <div>
-              <p style={{ fontSize: 12, color: '#B1B4BA', margin: '0 0 4px 0' }}>Created by</p>
-              <p style={{ fontSize: 14, color: '#F2F4F7', fontWeight: 500, margin: 0 }}>{task.createdBy?.name}</p>
-            </div>
-          </div>
-
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 16, marginTop: 4 }}>
-            <p style={{ fontSize: 12, color: '#B1B4BA', margin: '0 0 4px 0' }}>Created {formatDistanceToNow(new Date(task.createdAt), { addSuffix: true })}</p>
-            <p style={{ fontSize: 12, color: '#B1B4BA', margin: 0 }}>Updated {formatDistanceToNow(new Date(task.updatedAt), { addSuffix: true })}</p>
           </div>
         </div>
       </div>
 
-      <Modal isOpen={showEdit} onClose={() => setShowEdit(false)} title="Edit Task" size="lg">
+      <Modal show={showEdit} onClose={() => setShowEdit(false)} title="Edit Task Information">
         <TaskForm projectId={task.project?._id} members={members} initialData={task} onSubmit={handleUpdate} onCancel={() => setShowEdit(false)} />
       </Modal>
     </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Calendar, User as UserIcon, Tag, AlertCircle } from 'lucide-react';
 
 const PRIORITIES = ['Low', 'Medium', 'High', 'Urgent'];
 const STATUSES = ['To Do', 'In Progress', 'In Review', 'Done'];
@@ -39,68 +39,115 @@ export default function TaskForm({ projectId, members = [], defaultStatus = 'To 
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <form onSubmit={handleSubmit} className="space-y-lg">
       {error && (
-        <div style={{
-          padding: '12px 16px', background: 'rgba(195,40,77,0.1)', border: '1px solid rgba(195,40,77,0.3)',
-          borderRadius: 12, color: '#FF3F6D', fontSize: 14,
-        }}>
-          {error}
+        <div className="p-md bg-error-50 dark:bg-error-900/20 border border-error-100 dark:border-error-800 rounded-xl text-error-600 dark:text-error-400 text-sm flex items-center gap-3">
+          <AlertCircle size={18} />
+          <span className="font-bold">{error}</span>
         </div>
       )}
 
-      <div className="form-group">
-        <label className="label">Task title <span style={{ color: '#FF3F6D' }}>*</span></label>
-        <input name="title" value={form.title} onChange={handleChange} required
-          className="input" placeholder="Describe the task…" minLength={3} maxLength={200} />
+      <div className="flex flex-col gap-1.5">
+        <label className="label">Task Title</label>
+        <input 
+          name="title" 
+          value={form.title} 
+          onChange={handleChange} 
+          required
+          className="input font-bold" 
+          placeholder="What needs to be done?" 
+          minLength={3} 
+          maxLength={200} 
+        />
       </div>
 
-      <div className="form-group">
-        <label className="label">Description</label>
-        <textarea name="description" value={form.description} onChange={handleChange}
-          className="input" style={{ resize: 'none' }} rows={3} placeholder="Add more details…" maxLength={1000} />
+      <div className="flex flex-col gap-1.5">
+        <label className="label">Description (Optional)</label>
+        <textarea 
+          name="description" 
+          value={form.description} 
+          onChange={handleChange}
+          className="input min-h-[100px] resize-none text-body-sm" 
+          placeholder="Add more context and details..." 
+          maxLength={1000} 
+        />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <div className="form-group">
+      <div className="grid grid-cols-2 gap-md">
+        <div className="flex flex-col gap-1.5">
           <label className="label">Status</label>
-          <select name="status" value={form.status} onChange={handleChange} className="input" style={{ cursor: 'pointer' }}>
-            {STATUSES.map(s => <option key={s} value={s} style={{ background: '#111827' }}>{s}</option>)}
+          <select 
+            name="status" 
+            value={form.status} 
+            onChange={handleChange} 
+            className="input cursor-pointer font-bold"
+          >
+            {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
-        <div className="form-group">
+        <div className="flex flex-col gap-1.5">
           <label className="label">Priority</label>
-          <select name="priority" value={form.priority} onChange={handleChange} className="input" style={{ cursor: 'pointer' }}>
-            {PRIORITIES.map(p => <option key={p} value={p} style={{ background: '#111827' }}>{p}</option>)}
+          <select 
+            name="priority" 
+            value={form.priority} 
+            onChange={handleChange} 
+            className="input cursor-pointer font-bold"
+          >
+            {PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <div className="form-group">
-          <label className="label">Assign to</label>
-          <select name="assignedTo" value={form.assignedTo} onChange={handleChange} className="input" style={{ cursor: 'pointer' }}>
-            <option value="" style={{ background: '#111827' }}>Unassigned</option>
-            {members.map(m => <option key={m.user._id} value={m.user._id} style={{ background: '#111827' }}>{m.user.name}</option>)}
-          </select>
+      <div className="grid grid-cols-2 gap-md">
+        <div className="flex flex-col gap-1.5">
+          <label className="label">Assignee</label>
+          <div className="relative">
+            <UserIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+            <select 
+              name="assignedTo" 
+              value={form.assignedTo} 
+              onChange={handleChange} 
+              className="input !pl-10 cursor-pointer font-bold appearance-none"
+            >
+              <option value="">Unassigned</option>
+              {members.map(m => <option key={m.user._id} value={m.user._id}>{m.user.name}</option>)}
+            </select>
+          </div>
         </div>
-        <div className="form-group">
-          <label className="label">Due date</label>
-          <input type="date" name="dueDate" value={form.dueDate} onChange={handleChange} className="input" />
+        <div className="flex flex-col gap-1.5">
+          <label className="label">Due Date</label>
+          <div className="relative">
+            <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+            <input 
+              type="date" 
+              name="dueDate" 
+              value={form.dueDate} 
+              onChange={handleChange} 
+              className="input !pl-10 font-bold" 
+            />
+          </div>
         </div>
       </div>
 
-      <div className="form-group">
-        <label className="label">Labels <span style={{ color: 'rgba(242,244,247,0.4)', fontWeight: 400 }}>(comma-separated)</span></label>
-        <input name="labels" value={form.labels} onChange={handleChange}
-          className="input" placeholder="bug, feature, design" />
+      <div className="flex flex-col gap-1.5">
+        <label className="label">Labels (Comma-separated)</label>
+        <div className="relative">
+          <Tag size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+          <input 
+            name="labels" 
+            value={form.labels} 
+            onChange={handleChange}
+            className="input !pl-10" 
+            placeholder="bug, critical, research" 
+          />
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-        <button type="button" onClick={onCancel} className="btn btn-secondary btn-md" style={{ flex: 1 }}>Cancel</button>
-        <button type="submit" disabled={loading} className="btn btn-primary btn-md" style={{ flex: 1 }}>
-          {loading ? <Loader2 size={18} className="animate-spin" /> : null}
-          {initialData ? 'Save Changes' : 'Create Task'}
+      <div className="flex gap-4 pt-4 border-t border-neutral-100 dark:border-neutral-800">
+        <button type="button" onClick={onCancel} className="btn-secondary flex-1">Cancel</button>
+        <button type="submit" disabled={loading} className="btn-primary flex-1 shadow-lg shadow-primary-500/20">
+          {loading ? <Loader2 size={18} className="animate-spin mr-2" /> : null}
+          <span className="font-bold">{initialData ? 'Update Task' : 'Create Task'}</span>
         </button>
       </div>
     </form>

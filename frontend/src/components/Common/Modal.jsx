@@ -1,68 +1,49 @@
 import { useEffect } from 'react';
+import { X } from 'lucide-react';
 
-export default function Modal({ isOpen, onClose, title, children, size = 'md' }) {
+export default function Modal({ show, isOpen, onClose, title, children, size = 'md' }) {
+  const isVisible = show !== undefined ? show : isOpen;
+
   useEffect(() => {
-    if (isOpen) document.body.style.overflow = 'hidden';
+    if (isVisible) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = '';
     return () => { document.body.style.overflow = ''; };
-  }, [isOpen]);
+  }, [isVisible]);
 
   useEffect(() => {
-    const h = (e) => { if (e.key === 'Escape') onClose(); };
+    const h = (e) => { if (e.key === 'Escape' && isVisible) onClose(); };
     document.addEventListener('keydown', h);
     return () => document.removeEventListener('keydown', h);
-  }, [onClose]);
+  }, [onClose, isVisible]);
 
-  if (!isOpen) return null;
+  if (!isVisible) return null;
 
-  const widths = { sm: 380, md: 480, lg: 640, xl: 800 };
+  const widths = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' };
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 50,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 16
-    }}>
-      {/* Backdrop — Nefee: rgba(13,20,33,0.6) */}
-      <div onClick={onClose} className="animate-fade-in" style={{
-        position: 'absolute', inset: 0,
-        background: 'rgba(13,20,33,0.75)',
-        backdropFilter: 'blur(4px)',
-      }} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-md sm:p-lg">
+      {/* Backdrop */}
+      <div 
+        onClick={onClose} 
+        className="absolute inset-0 bg-neutral-900/80 backdrop-blur-sm animate-fade-in"
+      />
 
       {/* Panel */}
-      <div className="animate-pop-in" style={{
-        position: 'relative', zIndex: 1,
-        width: '100%', maxWidth: widths[size],
-        background: 'linear-gradient(-20.95deg, rgba(255,255,255,0.06) 40.13%, rgba(255,255,255,0.1) 97.02%)',
-        border: '1px solid rgba(255,255,255,0.1)',
-        borderRadius: 16,
-        backdropFilter: 'blur(12px)',
-        boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
-        maxHeight: '90vh',
-        display: 'flex', flexDirection: 'column',
-      }}>
+      <div className={`relative z-10 w-full ${widths[size]} bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-2xl overflow-hidden animate-scale-in flex flex-col max-h-[90vh]`}>
         {title && (
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '20px 24px',
-            borderBottom: '1px solid rgba(255,255,255,0.06)',
-          }}>
-            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#F2F4F7' }}>{title}</h2>
-            <button onClick={onClose} style={{
-              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: 8, width: 30, height: 30,
-              cursor: 'pointer', color: '#B1B4BA',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'background 150ms ease, color 150ms ease',
-            }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
+          <div className="flex items-center justify-between px-lg py-md border-b border-neutral-100 dark:border-neutral-800 shrink-0 bg-neutral-50/50 dark:bg-neutral-800/50">
+            <h2 className="text-h3 font-bold text-neutral-900 dark:text-neutral-50">{title}</h2>
+            <button 
+              onClick={onClose}
+              className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-500 rounded-lg transition-all"
+            >
+              <X size={20} />
             </button>
           </div>
         )}
-        <div style={{ overflowY: 'auto', flex: 1, padding: 24 }}>{children}</div>
+        <div className="flex-1 overflow-y-auto p-lg">
+          {children}
+        </div>
       </div>
     </div>
   );

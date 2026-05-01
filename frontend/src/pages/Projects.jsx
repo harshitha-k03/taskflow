@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Plus, Loader2, FolderKanban, Calendar, MoreVertical, Trash2, Edit, CheckSquare } from 'lucide-react';
+import { Plus, Loader2, FolderKanban, Calendar, MoreVertical, Trash2, Edit, CheckSquare, ChevronRight, LayoutGrid } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { setProjects, addProject, removeProject, updateProject } from '../store/projectSlice';
 import * as projectApi from '../api/projects';
@@ -9,11 +9,11 @@ import Modal from '../components/Common/Modal';
 import ProjectForm from '../components/Projects/ProjectForm';
 import { format } from 'date-fns';
 
-const STATUS_BADGE = {
-  Active: { bg: 'rgba(0,213,176,0.15)', color: '#00D5B0', border: 'rgba(0,213,176,0.25)' },
-  'On Hold': { bg: 'rgba(255,162,0,0.15)', color: '#FFA200', border: 'rgba(255,162,0,0.25)' },
-  Completed: { bg: 'rgba(43,140,220,0.15)', color: '#2B8CDC', border: 'rgba(43,140,220,0.25)' },
-  Archived: { bg: 'rgba(255,255,255,0.06)', color: '#B1B4BA', border: 'rgba(255,255,255,0.1)' },
+const STATUS_CONFIG = {
+  Active: { color: 'text-success-600', bg: 'bg-success-100', darkText: 'dark:text-success-400', darkBg: 'dark:bg-success-900/30' },
+  'On Hold': { color: 'text-warning-600', bg: 'bg-warning-100', darkText: 'dark:text-warning-400', darkBg: 'dark:bg-warning-900/30' },
+  Completed: { color: 'text-primary-600', bg: 'bg-primary-100', darkText: 'dark:text-primary-400', darkBg: 'dark:bg-primary-900/30' },
+  Archived: { color: 'text-neutral-600', bg: 'bg-neutral-100', darkText: 'dark:text-neutral-400', darkBg: 'dark:bg-neutral-800' },
 };
 
 export default function Projects() {
@@ -63,120 +63,116 @@ export default function Projects() {
   };
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 40 }}>
+    <div className="page-enter max-w-7xl mx-auto flex flex-col gap-lg pb-xl">
       {/* Header */}
-      <div className="animate-enter" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="page-title">Projects</h1>
-          <p style={{ color: '#B1B4BA', fontSize: 14, margin: '4px 0 0' }}>{projects.length} project{projects.length !== 1 ? 's' : ''}</p>
+          <h1 className="text-display">Projects</h1>
+          <p className="text-body-sm text-neutral-500 mt-1 font-medium">
+            Manage and track all your team's initiatives
+          </p>
         </div>
-        <button onClick={() => setShowCreate(true)} className="btn btn-primary btn-md">
-          <Plus size={18} /> New Project
+        <button onClick={() => setShowCreate(true)} className="btn-primary shadow-lg shadow-primary-500/20">
+          <Plus size={20} /> New Project
         </button>
       </div>
 
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
-          <Loader2 size={32} color="#00D5B0" className="animate-spin" />
+        <div className="flex items-center justify-center py-20">
+          <Loader2 size={40} className="animate-spin text-primary-500" />
         </div>
       ) : projects.length === 0 ? (
-        <div className="card animate-enter stagger-1" style={{ textAlign: 'center', padding: '80px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <FolderKanban size={48} color="#B1B4BA" style={{ marginBottom: 16 }} />
-          <h3 style={{ fontSize: 18, fontWeight: 600, color: '#F2F4F7', margin: '0 0 8px 0' }}>No projects yet</h3>
-          <p style={{ fontSize: 14, color: '#B1B4BA', margin: '0 0 24px 0' }}>Create your first project to get started</p>
-          <button onClick={() => setShowCreate(true)} className="btn btn-primary btn-md">
-            <Plus size={18} /> Create Project
+        <div className="card flex flex-col items-center justify-center py-20 text-center gap-6 bg-neutral-50 dark:bg-neutral-900/50 border-dashed">
+          <div className="w-20 h-20 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+            <FolderKanban size={40} className="text-neutral-400" />
+          </div>
+          <div>
+            <h3 className="text-h3 font-bold">No projects found</h3>
+            <p className="text-body-sm text-neutral-500 mt-2 max-w-xs">
+              You haven't created any projects yet. Get started by creating your first one.
+            </p>
+          </div>
+          <button onClick={() => setShowCreate(true)} className="btn-primary">
+            <Plus size={20} /> Create Your First Project
           </button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
-          {projects.map((project, i) => {
-            const statusStyle = STATUS_BADGE[project.status] || STATUS_BADGE.Archived;
-            const delayClass = `stagger-${(i % 5) + 1}`;
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
+          {projects.map((project) => {
+            const status = STATUS_CONFIG[project.status] || STATUS_CONFIG.Archived;
             
             return (
-              <div key={project._id} className={`card animate-enter ${delayClass}`} style={{ 
-                padding: 24, position: 'relative', overflow: 'hidden',
-                display: 'flex', flexDirection: 'column',
-                transition: 'transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 200ms ease'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-                
-                {/* Color Top Bar */}
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: project.color || '#2B8CDC' }} />
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                    <div style={{
-                      width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                      background: `${project.color || '#2B8CDC'}20`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center'
-                    }}>
-                      <FolderKanban size={20} color={project.color || '#2B8CDC'} />
+              <div key={project._id} className="card group flex flex-col !p-0 overflow-hidden relative border-t-4" style={{ borderTopColor: project.color || '#3b82f6' }}>
+                <div className="p-lg flex-1">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-inner" style={{ background: `${project.color || '#3b82f6'}15`, color: project.color || '#3b82f6' }}>
+                      <FolderKanban size={24} />
                     </div>
-                    <div style={{ minWidth: 0 }}>
-                      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#F2F4F7', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {project.name}
-                      </h3>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: statusStyle.bg, color: statusStyle.color, border: `1px solid ${statusStyle.border}`, marginTop: 4 }}>
-                        {project.status}
+                    
+                    {project.myRole === 'Admin' && (
+                      <div className="relative">
+                        <button 
+                          onClick={(e) => { e.preventDefault(); setMenuOpen(menuOpen === project._id ? null : project._id); }}
+                          className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors text-neutral-400 hover:text-neutral-600"
+                        >
+                          <MoreVertical size={18} />
+                        </button>
+                        {menuOpen === project._id && (
+                          <div className="absolute right-0 top-full mt-2 w-36 bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-neutral-200 dark:border-neutral-700 p-1 z-20 animate-scale-in">
+                            <button 
+                              onClick={() => { setEditProject(project); setMenuOpen(null); }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold hover:bg-neutral-50 dark:hover:bg-neutral-700 rounded-md transition-colors"
+                            >
+                              <Edit size={14} /> Edit Project
+                            </button>
+                            <button 
+                              onClick={() => { handleDelete(project); setMenuOpen(null); }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-error-600 hover:bg-error-50 dark:hover:bg-error-900/20 rounded-md transition-colors"
+                            >
+                              <Trash2 size={14} /> Delete
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    </div>
+                    )}
                   </div>
 
-                  {project.myRole === 'Admin' && (
-                    <div style={{ position: 'relative' }}>
-                      <button onClick={(e) => { e.preventDefault(); setMenuOpen(menuOpen === project._id ? null : project._id); }}
-                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, color: '#B1B4BA', borderRadius: 6, outline: 'none' }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                        <MoreVertical size={18} />
-                      </button>
-                      {menuOpen === project._id && (
-                        <div className="animate-slide-down card" style={{
-                          position: 'absolute', right: 0, top: 32, zIndex: 20, width: 140, padding: 4,
-                          boxShadow: '0 12px 32px rgba(0,0,0,0.5)'
-                        }}>
-                          <button onClick={() => { setEditProject(project); setMenuOpen(null); }}
-                            style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', background: 'transparent', border: 'none', color: '#F2F4F7', fontSize: 13, cursor: 'pointer', borderRadius: 6, textAlign: 'left' }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                            <Edit size={14} /> Edit
-                          </button>
-                          <button onClick={() => { handleDelete(project); setMenuOpen(null); }}
-                            style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', background: 'transparent', border: 'none', color: '#FF3F6D', fontSize: 13, cursor: 'pointer', borderRadius: 6, textAlign: 'left' }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,63,109,0.1)'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                            <Trash2 size={14} /> Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <p className="line-clamp-2" style={{ margin: '0 0 20px 0', fontSize: 14, color: '#B1B4BA', lineHeight: 1.5, minHeight: 42 }}>
-                  {project.description || 'No description provided.'}
-                </p>
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#B1B4BA', fontSize: 13, fontWeight: 500 }}>
-                    <CheckSquare size={14} /> {project.taskCount || 0} tasks
-                  </div>
-                  {project.endDate && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#B1B4BA', fontSize: 13, fontWeight: 500 }}>
-                      <Calendar size={14} /> {format(new Date(project.endDate), 'MMM d, yyyy')}
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ display: 'flex', gap: 12, marginTop: 'auto' }}>
-                  <Link to={`/projects/${project._id}`} className="btn btn-secondary btn-sm" style={{ flex: 1 }}>
-                    Details
+                  <Link to={`/projects/${project._id}`} className="block group/title">
+                    <h3 className="text-h3 font-bold text-neutral-900 dark:text-neutral-50 group-hover/title:text-primary-600 dark:group-hover/title:text-primary-400 transition-colors truncate">
+                      {project.name}
+                    </h3>
                   </Link>
-                  <Link to={`/projects/${project._id}/board`} className="btn btn-primary btn-sm" style={{ flex: 1 }}>
-                    Board
+
+                  <div className="mt-2 mb-4">
+                    <span className={`badge ${status.bg} ${status.color} ${status.darkBg} ${status.darkText}`}>
+                      {project.status}
+                    </span>
+                  </div>
+
+                  <p className="text-body-sm text-neutral-500 line-clamp-2 mb-6 min-h-[40px]">
+                    {project.description || 'No description provided for this project.'}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-4 py-4 border-t border-neutral-100 dark:border-neutral-800">
+                    <div className="flex items-center gap-2 text-neutral-500">
+                      <CheckSquare size={16} className="text-primary-500" />
+                      <span className="text-xs font-bold">{project.taskCount || 0} Tasks</span>
+                    </div>
+                    {project.endDate && (
+                      <div className="flex items-center gap-2 text-neutral-500">
+                        <Calendar size={16} className="text-warning-500" />
+                        <span className="text-xs font-bold">{format(new Date(project.endDate), 'MMM d, yyyy')}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex border-t border-neutral-100 dark:border-neutral-800">
+                  <Link to={`/projects/${project._id}`} className="flex-1 py-3 text-center text-xs font-bold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors border-r border-neutral-100 dark:border-neutral-800 flex items-center justify-center gap-2">
+                    <LayoutGrid size={14} /> Details
+                  </Link>
+                  <Link to={`/projects/${project._id}/board`} className="flex-1 py-3 text-center text-xs font-bold text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors flex items-center justify-center gap-2">
+                    <ChevronRight size={14} /> View Board
                   </Link>
                 </div>
               </div>
@@ -186,17 +182,17 @@ export default function Projects() {
       )}
 
       {/* Create Modal */}
-      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Create New Project">
+      <Modal show={showCreate} onClose={() => setShowCreate(false)} title="Create New Project">
         <ProjectForm onSubmit={handleCreate} onCancel={() => setShowCreate(false)} />
       </Modal>
 
       {/* Edit Modal */}
-      <Modal isOpen={!!editProject} onClose={() => setEditProject(null)} title="Edit Project">
+      <Modal show={!!editProject} onClose={() => setEditProject(null)} title="Edit Project">
         <ProjectForm initialData={editProject} onSubmit={handleUpdate} onCancel={() => setEditProject(null)} />
       </Modal>
 
       {/* Close menu overlay */}
-      {menuOpen && <div style={{ position: 'fixed', inset: 0, zIndex: 10 }} onClick={() => setMenuOpen(null)} />}
+      {menuOpen && <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(null)} />}
     </div>
   );
 }

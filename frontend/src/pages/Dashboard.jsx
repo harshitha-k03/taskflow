@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
   FolderKanban, CheckSquare, AlertTriangle, TrendingUp,
-  Clock, ArrowRight, Loader2
+  Clock, ArrowRight, Loader2, Calendar, CheckCircle, ChevronRight
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis
@@ -11,31 +11,17 @@ import {
 import { getDashboard } from '../api/tasks';
 import { format, isPast } from 'date-fns';
 
-// Nefee Color Tokens
-const PRIORITY_COLORS = { Low: '#B1B4BA', Medium: '#2B8CDC', High: '#FFA200', Urgent: '#FF3F6D' };
-const STATUS_COLORS = { 'To Do': '#B1B4BA', 'In Progress': '#2B8CDC', 'In Review': '#FFA200', Done: '#00D5B0' };
+const PRIORITY_COLORS = { Low: '#9ca3af', Medium: '#3b82f6', High: '#f59e0b', Urgent: '#ef4444' };
+const STATUS_COLORS = { 'To Do': '#6b7280', 'In Progress': '#3b82f6', 'In Review': '#8b5cf6', Done: '#10b981' };
 
-function StatCard({ icon: Icon, label, value, gradient, sub, delayClass }) {
+function StatCard({ icon: Icon, label, value, sub, colorClass = "from-primary-500 to-primary-600" }) {
   return (
-    <div className={`card animate-enter ${delayClass}`} style={{ 
-      padding: '24px', 
-      display: 'flex', 
-      alignItems: 'flex-start', 
-      gap: '16px',
-      transition: 'transform 160ms cubic-bezier(0.23, 1, 0.32, 1), background 200ms ease'
-    }}>
-      <div style={{
-        width: 48, height: 48, borderRadius: 14,
-        background: gradient,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
-      }}>
-        <Icon size={24} color="#F2F4F7" />
-      </div>
-      <div>
-        <p style={{ fontSize: 28, fontWeight: 700, color: '#F2F4F7', margin: 0, lineHeight: 1.2 }}>{value}</p>
-        <p style={{ fontSize: 13, color: '#B1B4BA', margin: '4px 0 0', fontWeight: 500 }}>{label}</p>
-        {sub && <p style={{ fontSize: 12, color: 'rgba(242,244,247,0.4)', margin: '4px 0 0' }}>{sub}</p>}
+    <div className={`bg-gradient-to-br ${colorClass} text-white rounded-lg p-lg shadow-lg hover:shadow-xl transition-all duration-300 group overflow-hidden relative`}>
+      <Icon size={48} className="absolute -right-2 -bottom-2 opacity-10 group-hover:scale-110 transition-transform duration-500" />
+      <div className="relative z-10">
+        <p className="text-body-sm opacity-90 font-medium mb-1 tracking-wide uppercase">{label}</p>
+        <h3 className="text-4xl font-bold mb-2 tracking-tight">{value}</h3>
+        {sub && <p className="text-[11px] opacity-75 font-semibold bg-white/10 inline-block px-2 py-0.5 rounded-full">{sub}</p>}
       </div>
     </div>
   );
@@ -55,8 +41,8 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
-        <Loader2 size={32} color="#00D5B0" className="animate-spin" />
+      <div className="flex items-center justify-center h-full">
+        <Loader2 size={48} className="animate-spin text-primary-500" />
       </div>
     );
   }
@@ -72,143 +58,183 @@ export default function Dashboard() {
   const greeting = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 1200, margin: '0 auto' }}>
+    <div className="page-enter flex flex-col gap-xl max-w-7xl mx-auto pb-xl">
       
-      {/* Header */}
-      <div className="animate-enter" style={{ marginBottom: 8 }}>
-        <h1 className="page-title">
-          Good {greeting},{' '}
-          <span className="text-gradient">{user?.name?.split(' ')[0]}</span> 👋
-        </h1>
-        <p style={{ color: '#B1B4BA', fontSize: 14, margin: '6px 0 0' }}>
-          {format(new Date(), 'EEEE, MMMM do yyyy')}
-        </p>
+      {/* Welcome Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-display">
+            Good {greeting}, <span className="text-primary-600 dark:text-primary-400">{user?.name?.split(' ')[0]}</span>
+          </h1>
+          <div className="flex items-center gap-2 text-neutral-500 mt-1 font-medium">
+            <Calendar size={16} />
+            {format(new Date(), 'EEEE, MMMM do yyyy')}
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <Link to="/projects" className="btn-secondary">View Projects</Link>
+          <button onClick={() => window.location.href = '/projects'} className="btn-primary">
+            New Project
+          </button>
+        </div>
       </div>
 
       {/* Overdue alert */}
       {data?.overdueTasks > 0 && (
-        <div className="animate-enter stagger-1" style={{
-          display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px',
-          background: 'linear-gradient(90deg, rgba(195,40,77,0.15) 0%, rgba(195,40,77,0.05) 100%)',
-          borderLeft: '4px solid #FF3F6D',
-          borderRadius: '0 12px 12px 0',
-        }}>
-          <AlertTriangle size={20} color="#FF3F6D" style={{ flexShrink: 0 }} />
-          <p style={{ margin: 0, fontSize: 14, color: '#F2F4F7' }}>
-            You have <strong style={{ color: '#FF3F6D' }}>{data.overdueTasks}</strong> overdue task{data.overdueTasks !== 1 ? 's' : ''} that need attention.
+        <div className="flex items-center gap-4 p-md bg-error-50 dark:bg-error-900/20 border border-error-100 dark:border-error-800 rounded-lg text-error-700 dark:text-error-300 shadow-sm animate-pulse">
+          <div className="w-10 h-10 rounded-full bg-error-100 dark:bg-error-900 flex items-center justify-center flex-shrink-0">
+            <AlertTriangle size={20} className="text-error-600 dark:text-error-400" />
+          </div>
+          <p className="font-medium text-body-sm">
+            Attention: You have <span className="font-bold underline">{data.overdueTasks} overdue tasks</span> that require immediate action.
           </p>
+          <ChevronRight size={20} className="ml-auto opacity-50" />
         </div>
       )}
 
-      {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
-        <StatCard delayClass="stagger-1" icon={FolderKanban} label="Total Projects" value={data?.totalProjects ?? 0}
-          gradient="linear-gradient(135deg, #2B8CDC 0%, #1a5c96 100%)" />
-        <StatCard delayClass="stagger-2" icon={CheckSquare} label="Total Tasks" value={data?.totalTasks ?? 0}
-          gradient="linear-gradient(135deg, #FFA200 0%, #b37300 100%)" />
-        <StatCard delayClass="stagger-3" icon={TrendingUp} label="Completion Rate" value={`${data?.completionRate ?? 0}%`}
-          gradient="linear-gradient(135deg, #00D5B0 0%, #008a72 100%)" />
-        <StatCard delayClass="stagger-4" icon={Clock} label="Done This Week" value={data?.completedThisWeek ?? 0}
-          gradient="linear-gradient(135deg, #8b5cf6 0%, #5b21b6 100%)" sub={`${data?.completedThisMonth ?? 0} this month`} />
+      {/* Stat cards grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-lg">
+        <StatCard 
+          icon={FolderKanban} 
+          label="Total Projects" 
+          value={data?.totalProjects ?? 0}
+          colorClass="from-blue-600 to-indigo-700"
+        />
+        <StatCard 
+          icon={CheckSquare} 
+          label="Total Tasks" 
+          value={data?.totalTasks ?? 0}
+          colorClass="from-amber-500 to-orange-600"
+        />
+        <StatCard 
+          icon={TrendingUp} 
+          label="Completion Rate" 
+          value={`${data?.completionRate ?? 0}%`}
+          colorClass="from-emerald-500 to-teal-600"
+        />
+        <StatCard 
+          icon={Clock} 
+          label="Done This Week" 
+          value={data?.completedThisWeek ?? 0}
+          sub={`${data?.completedThisMonth ?? 0} this month`}
+          colorClass="from-purple-600 to-violet-700"
+        />
       </div>
 
-      {/* Main Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20, alignItems: 'start' }}>
+      {/* Analytics & Tasks Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-lg">
         
-        {/* Status Pie */}
-        <div className="card animate-enter stagger-5" style={{ padding: 24 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 600, color: '#F2F4F7', marginBottom: 20, margin: 0 }}>Tasks by Status</h3>
+        {/* Status Distribution */}
+        <div className="card">
+          <h3 className="text-h3 font-bold mb-lg border-b border-neutral-100 dark:border-neutral-800 pb-4 flex items-center gap-2">
+            <CheckCircle size={20} className="text-primary-500" /> Task Status
+          </h3>
           {statusData.length > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height={200}>
+            <div className="flex flex-col items-center">
+              <ResponsiveContainer width="100%" height={240}>
                 <PieChart>
-                  <Pie data={statusData} cx="50%" cy="50%" innerRadius={55} outerRadius={80}
-                    dataKey="value" paddingAngle={4} stroke="none">
+                  <Pie data={statusData} cx="50%" cy="50%" innerRadius={60} outerRadius={85}
+                    dataKey="value" paddingAngle={5} stroke="none">
                     {statusData.map((entry) => (
-                      <Cell key={entry.name} fill={STATUS_COLORS[entry.name] || '#B1B4BA'} />
+                      <Cell key={entry.name} fill={STATUS_COLORS[entry.name] || '#6b7280'} />
                     ))}
                   </Pie>
                   <Tooltip 
-                    contentStyle={{ background: 'rgba(17, 24, 39, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, backdropFilter: 'blur(8px)' }}
-                    itemStyle={{ color: '#F2F4F7', fontSize: 13 }}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center', marginTop: 16 }}>
+              <div className="grid grid-cols-2 gap-x-8 gap-y-3 mt-4 w-full px-4">
                 {statusData.map((s) => (
-                  <span key={s.name} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#B1B4BA', fontWeight: 500 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS_COLORS[s.name], boxShadow: `0 0 8px ${STATUS_COLORS[s.name]}` }} />
-                    {s.name} <span style={{ color: '#F2F4F7' }}>{s.value}</span>
-                  </span>
+                  <div key={s.name} className="flex items-center justify-between group cursor-default">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ background: STATUS_COLORS[s.name] }} />
+                      <span className="text-body-sm text-neutral-500 font-medium group-hover:text-neutral-900 dark:group-hover:text-neutral-200 transition-colors">{s.name}</span>
+                    </div>
+                    <span className="text-body-sm font-bold">{s.value}</span>
+                  </div>
                 ))}
               </div>
-            </>
+            </div>
           ) : (
-            <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#B1B4BA', fontSize: 13 }}>No tasks yet</div>
+            <div className="h-60 flex flex-col items-center justify-center text-neutral-400 gap-2">
+              <CheckSquare size={48} className="opacity-20" />
+              <p className="text-body-sm font-medium">No tasks found</p>
+            </div>
           )}
         </div>
 
-        {/* Priority Bar */}
-        <div className="card animate-enter stagger-5" style={{ padding: 24 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 600, color: '#F2F4F7', marginBottom: 20, margin: 0 }}>Tasks by Priority</h3>
+        {/* Priority Breakdown */}
+        <div className="card">
+          <h3 className="text-h3 font-bold mb-lg border-b border-neutral-100 dark:border-neutral-800 pb-4 flex items-center gap-2">
+            <TrendingUp size={20} className="text-primary-500" /> Priority Distribution
+          </h3>
           {priorityData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={236}>
-              <BarChart data={priorityData} barSize={36} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <XAxis dataKey="name" tick={{ fill: '#B1B4BA', fontSize: 12 }} axisLine={false} tickLine={false} dy={10} />
-                <YAxis tick={{ fill: '#B1B4BA', fontSize: 12 }} axisLine={false} tickLine={false} dx={-10} />
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={priorityData} barSize={40} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <XAxis dataKey="name" tick={{ fill: '#9ca3af', fontSize: 12, fontWeight: 600 }} axisLine={false} tickLine={false} dy={10} />
+                <YAxis tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={false} tickLine={false} />
                 <Tooltip 
-                  cursor={{ fill: 'rgba(255,255,255,0.04)' }}
-                  contentStyle={{ background: 'rgba(17, 24, 39, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, backdropFilter: 'blur(8px)' }}
+                  cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
                 />
-                <Bar dataKey="value" radius={[6, 6, 6, 6]}>
+                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                   {priorityData.map((entry) => (
-                    <Cell key={entry.name} fill={PRIORITY_COLORS[entry.name] || '#B1B4BA'} />
+                    <Cell key={entry.name} fill={PRIORITY_COLORS[entry.name] || '#9ca3af'} />
                   ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div style={{ height: 236, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#B1B4BA', fontSize: 13 }}>No tasks yet</div>
+            <div className="h-60 flex flex-col items-center justify-center text-neutral-400 gap-2">
+              <TrendingUp size={48} className="opacity-20" />
+              <p className="text-body-sm font-medium">No data available</p>
+            </div>
           )}
         </div>
 
-        {/* My Tasks List */}
-        <div className="card animate-enter stagger-5" style={{ padding: 24 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 600, color: '#F2F4F7', marginBottom: 16, margin: 0 }}>My Open Tasks</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {/* Recent Tasks */}
+        <div className="card">
+          <h3 className="text-h3 font-bold mb-lg border-b border-neutral-100 dark:border-neutral-800 pb-4 flex items-center justify-between">
+            <span className="flex items-center gap-2"><Clock size={20} className="text-primary-500" /> My Tasks</span>
+            <span className="text-label bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 px-2 py-0.5 rounded-full">{data?.myTasks?.length || 0}</span>
+          </h3>
+          <div className="space-y-3">
             {data?.myTasks?.length > 0 ? (
               data.myTasks.map((task) => (
-                <Link key={task._id} to={`/projects/${task.project}/tasks?task=${task._id}`}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 12, padding: '12px',
-                    borderRadius: 12, background: 'rgba(255,255,255,0.03)',
-                    textDecoration: 'none', transition: 'background 150ms ease, transform 150ms ease'
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.transform = 'translateX(4px)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.transform = 'translateX(0)'; }}
+                <Link key={task._id} to={`/projects/${task.project}/board`}
+                  className="flex items-center gap-4 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 border border-transparent hover:border-primary-200 dark:hover:border-primary-800 hover:bg-white dark:hover:bg-neutral-800 hover:shadow-sm transition-all group"
                 >
-                  <div style={{
-                    width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                    background: PRIORITY_COLORS[task.priority] || PRIORITY_COLORS.Low,
-                    boxShadow: `0 0 8px ${PRIORITY_COLORS[task.priority] || PRIORITY_COLORS.Low}`
-                  }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p className="line-clamp-2" style={{ margin: 0, fontSize: 14, color: '#F2F4F7', fontWeight: 500, lineHeight: 1.4 }}>{task.title}</p>
+                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm" style={{ background: PRIORITY_COLORS[task.priority] || PRIORITY_COLORS.Low }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-body-sm font-bold truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{task.title}</p>
                     {task.dueDate && (
-                      <p style={{ margin: '4px 0 0', fontSize: 12, color: isPast(new Date(task.dueDate)) ? '#FF3F6D' : '#B1B4BA' }}>
-                        Due {format(new Date(task.dueDate), 'MMM d, yyyy')}
-                      </p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Calendar size={12} className={isPast(new Date(task.dueDate)) ? 'text-error-500' : 'text-neutral-400'} />
+                        <span className={`text-[11px] font-semibold ${isPast(new Date(task.dueDate)) ? 'text-error-600 dark:text-error-400' : 'text-neutral-500'}`}>
+                          {format(new Date(task.dueDate), 'MMM d, yyyy')}
+                        </span>
+                      </div>
                     )}
                   </div>
-                  <ArrowRight size={16} color="#B1B4BA" style={{ flexShrink: 0 }} />
+                  <ChevronRight size={16} className="text-neutral-300 group-hover:text-primary-500 transition-colors" />
                 </Link>
               ))
             ) : (
-              <div style={{ padding: '32px 0', textAlign: 'center', color: '#B1B4BA', fontSize: 14 }}>
-                No tasks assigned to you 🎉
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4">
+                  <CheckSquare size={32} className="text-neutral-300" />
+                </div>
+                <h4 className="text-body font-bold text-neutral-900 dark:text-neutral-50">All caught up!</h4>
+                <p className="text-body-sm text-neutral-500 mt-1 px-4">You don't have any open tasks assigned to you right now.</p>
               </div>
             )}
           </div>
+          {data?.myTasks?.length > 0 && (
+            <Link to="/projects" className="mt-6 block text-center text-body-sm font-bold text-primary-600 hover:text-primary-700 dark:text-primary-400 transition-colors">
+              View All Tasks
+            </Link>
+          )}
         </div>
 
       </div>

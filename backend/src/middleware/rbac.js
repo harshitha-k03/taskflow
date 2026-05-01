@@ -43,8 +43,10 @@ const requireTaskProjectMember = async (req, res, next) => {
     if (!task) return next(new AppError('Task not found.', 404));
 
     req.task = task;
+    const projectId = task.project && task.project._id ? task.project._id : task.project;
+    
     const membership = await TeamMember.findOne({
-      project: task.project,
+      project: projectId,
       user: req.user._id,
     });
 
