@@ -19,6 +19,11 @@ export default function Login() {
     setError('');
   };
 
+  const handleDemoLogin = () => {
+    setForm({ email: 'demo@taskflow.com', password: 'password123' });
+    setError('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -57,6 +62,14 @@ export default function Login() {
               <span className="font-bold">{error}</span>
             </div>
           )}
+
+          <div className="mb-6 p-4 rounded-xl bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800 text-primary-800 dark:text-primary-300">
+            <h3 className="font-bold mb-1">Try the Live Demo!</h3>
+            <p className="text-sm mb-3">You can use our pre-populated demo account to explore TaskFlow's features without signing up.</p>
+            <button type="button" onClick={handleDemoLogin} className="text-xs font-bold bg-primary-100 dark:bg-primary-800 px-3 py-2 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-700 transition-colors w-full">
+              Auto-fill Demo Credentials
+            </button>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="flex flex-col gap-1.5">
