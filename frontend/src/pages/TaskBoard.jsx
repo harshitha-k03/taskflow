@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCorners
@@ -17,39 +17,69 @@ import { format, isPast } from 'date-fns';
 
 const COLUMNS = ['To Do', 'In Progress', 'In Review', 'Done'];
 const COLUMN_STYLES = {
-  'To Do': { header: 'bg-gray-800/80 text-gray-300', dot: 'bg-gray-400' },
-  'In Progress': { header: 'bg-blue-900/40 text-blue-300', dot: 'bg-blue-400' },
-  'In Review': { header: 'bg-yellow-900/40 text-yellow-300', dot: 'bg-yellow-400' },
-  Done: { header: 'bg-green-900/40 text-green-300', dot: 'bg-green-400' },
+  'To Do': { bg: 'rgba(255,255,255,0.06)', color: '#B1B4BA', dot: '#B1B4BA' },
+  'In Progress': { bg: 'rgba(43,140,220,0.15)', color: '#2B8CDC', dot: '#2B8CDC' },
+  'In Review': { bg: 'rgba(255,162,0,0.15)', color: '#FFA200', dot: '#FFA200' },
+  Done: { bg: 'rgba(0,213,176,0.15)', color: '#00D5B0', dot: '#00D5B0' },
 };
-const PRIORITY_COLORS = { Low: 'bg-gray-600', Medium: 'bg-blue-500', High: 'bg-orange-500', Urgent: 'bg-red-500' };
+const PRIORITY_COLORS = { Low: '#B1B4BA', Medium: '#2B8CDC', High: '#FFA200', Urgent: '#FF3F6D' };
 
 function TaskCard({ task, isDragging = false }) {
   const isOverdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== 'Done';
+  
   return (
-    <div className={`card p-3 cursor-grab active:cursor-grabbing hover:border-gray-700 transition-all ${isDragging ? 'opacity-50 rotate-1 shadow-2xl' : 'hover:shadow-md'}`}>
-      <div className="flex items-start gap-2">
-        <GripVertical className="w-3.5 h-3.5 text-gray-600 mt-0.5 flex-shrink-0" />
-        <div className="flex-1 min-w-0">
+    <div className="card" style={{ 
+      padding: '16px', 
+      cursor: isDragging ? 'grabbing' : 'grab',
+      opacity: isDragging ? 0.6 : 1,
+      transform: isDragging ? 'rotate(2deg) scale(1.02)' : 'none',
+      boxShadow: isDragging ? '0 24px 48px rgba(0,0,0,0.5)' : '0 2px 8px rgba(0,0,0,0.1)',
+      transition: isDragging ? 'none' : 'transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 200ms ease, background 200ms ease',
+      border: '1px solid rgba(255,255,255,0.06)',
+      position: 'relative',
+      zIndex: isDragging ? 50 : 1
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        <GripVertical size={16} color="#B1B4BA" style={{ marginTop: 2, flexShrink: 0, opacity: 0.5 }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
           <Link to={`/tasks/${task._id}`} onClick={(e) => e.stopPropagation()}
-            className="text-sm font-medium text-gray-200 hover:text-white line-clamp-2 leading-snug block">
+            style={{ 
+              fontSize: 14, fontWeight: 600, color: '#F2F4F7', 
+              textDecoration: 'none', display: 'block', marginBottom: 8,
+              lineHeight: 1.4
+            }}
+            className="line-clamp-2"
+            onMouseEnter={(e) => e.target.style.color = '#00D5B0'}
+            onMouseLeave={(e) => e.target.style.color = '#F2F4F7'}
+          >
             {task.title}
           </Link>
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <span className={`w-1.5 h-1.5 rounded-full ${PRIORITY_COLORS[task.priority]}`} />
-            <span className="text-xs text-gray-500">{task.priority}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ 
+              display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, 
+              color: PRIORITY_COLORS[task.priority] || '#B1B4BA', 
+              background: 'rgba(255,255,255,0.04)', padding: '2px 6px', borderRadius: 6
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: PRIORITY_COLORS[task.priority] || '#B1B4BA', boxShadow: `0 0 6px ${PRIORITY_COLORS[task.priority] || '#B1B4BA'}` }} />
+              {task.priority}
+            </span>
             {task.dueDate && (
-              <span className={`flex items-center gap-1 text-xs ${isOverdue ? 'text-red-400' : 'text-gray-500'}`}>
-                <Calendar className="w-3 h-3" />{format(new Date(task.dueDate), 'MMM d')}
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: isOverdue ? '#FF3F6D' : '#B1B4BA', background: isOverdue ? 'rgba(255,63,109,0.1)' : 'transparent', padding: '2px 6px', borderRadius: 6 }}>
+                <Calendar size={12} /> {format(new Date(task.dueDate), 'MMM d')}
               </span>
             )}
           </div>
           {task.assignedTo && (
-            <div className="flex items-center gap-1.5 mt-2">
-              <div className="w-5 h-5 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs">
-                {task.assignedTo.name?.charAt(0).toUpperCase()}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12 }}>
+              <div style={{
+                width: 20, height: 20, borderRadius: '50%', background: 'linear-gradient(135deg, #2B8CDC 0%, #1a5c96 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F2F4F7', fontSize: 10, fontWeight: 700
+              }}>
+                {task.assignedTo?.name ? task.assignedTo.name.charAt(0).toUpperCase() : '?'}
               </div>
-              <span className="text-xs text-gray-500 truncate">{task.assignedTo.name}</span>
+              <span style={{ fontSize: 11, color: '#B1B4BA', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {task.assignedTo.name}
+              </span>
             </div>
           )}
         </div>
@@ -69,21 +99,35 @@ function SortableCard({ task }) {
 
 function Column({ status, tasks, onAdd }) {
   const style = COLUMN_STYLES[status];
+  const colTasks = Array.isArray(tasks) ? tasks : [];
+  
   return (
-    <div className="flex flex-col w-72 flex-shrink-0">
-      <div className={`flex items-center justify-between px-3 py-2 rounded-lg mb-3 ${style.header}`}>
-        <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${style.dot}`} />
-          <span className="text-sm font-medium">{status}</span>
-          <span className="text-xs opacity-70 bg-black/20 px-1.5 py-0.5 rounded-full">{tasks.length}</span>
+    <div style={{ display: 'flex', flexDirection: 'column', width: 300, flexShrink: 0 }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+        padding: '12px 16px', borderRadius: 12, marginBottom: 16,
+        background: style.bg, border: `1px solid ${style.bg.replace('0.15', '0.25')}`
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: style.dot, boxShadow: `0 0 8px ${style.dot}` }} />
+          <span style={{ fontSize: 14, fontWeight: 600, color: style.color }}>{status}</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#F2F4F7', background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 999 }}>
+            {colTasks.length}
+          </span>
         </div>
-        <button onClick={() => onAdd(status)} className="w-6 h-6 rounded-md hover:bg-white/10 flex items-center justify-center transition-colors">
-          <Plus className="w-3.5 h-3.5" />
+        <button onClick={() => onAdd(status)} style={{
+          background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, color: style.color, borderRadius: 6,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+        >
+          <Plus size={16} />
         </button>
       </div>
-      <SortableContext items={tasks.map(t => t._id)} strategy={verticalListSortingStrategy}>
-        <div className="flex flex-col gap-2 flex-1 min-h-48 p-1">
-          {tasks.map(task => <SortableCard key={task._id} task={task} />)}
+      <SortableContext items={colTasks.map(t => t._id)} strategy={verticalListSortingStrategy}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minHeight: 200 }}>
+          {colTasks.map(task => <SortableCard key={task._id} task={task} />)}
         </div>
       </SortableContext>
     </div>
@@ -115,10 +159,11 @@ export default function TaskBoard() {
       .finally(() => setLoading(false));
   }, [projectId, dispatch]);
 
-  const filtered = tasks.filter(t => {
+  const tasksList = Array.isArray(tasks) ? tasks : [];
+  const filtered = tasksList.filter(t => {
     if (filters.priority && t.priority !== filters.priority) return false;
     if (filters.assignedTo && t.assignedTo?._id !== filters.assignedTo) return false;
-    if (filters.search && !t.title.toLowerCase().includes(filters.search.toLowerCase())) return false;
+    if (filters.search && t.title && !t.title.toLowerCase().includes(filters.search.toLowerCase())) return false;
     return true;
   });
   const byStatus = COLUMNS.reduce((a, c) => { a[c] = filtered.filter(t => t.status === c); return a; }, {});
@@ -126,7 +171,7 @@ export default function TaskBoard() {
   const handleDragEnd = async ({ active, over }) => {
     setActiveTask(null);
     if (!over) return;
-    const dragged = tasks.find(t => t._id === active.id);
+    const dragged = tasksList.find(t => t._id === active.id);
     if (!dragged) return;
     let newStatus = null;
     for (const col of COLUMNS) {
@@ -147,46 +192,49 @@ export default function TaskBoard() {
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
   };
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-primary-400" /></div>;
+  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}><Loader2 size={32} color="#00D5B0" className="animate-spin" /></div>;
 
   return (
-    <div className="flex flex-col h-full animate-fade-in">
-      <div className="flex items-center justify-between mb-5 flex-shrink-0">
+    <div className="animate-enter" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexShrink: 0 }}>
         <div>
-          <Link to={`/projects/${projectId}`} className="flex items-center gap-2 text-gray-400 hover:text-white text-sm mb-1 transition-colors">
-            <ArrowLeft className="w-4 h-4" /> {project?.name}
+          <Link to={`/projects/${projectId}`} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8, color: '#B1B4BA',
+            textDecoration: 'none', fontSize: 13, marginBottom: 8, transition: 'color 150ms ease'
+          }} onMouseEnter={(e) => e.target.style.color = '#F2F4F7'} onMouseLeave={(e) => e.target.style.color = '#B1B4BA'}>
+            <ArrowLeft size={14} /> {project?.name}
           </Link>
-          <h1 className="text-xl font-bold text-white">Task Board</h1>
+          <h1 className="page-title">Task Board</h1>
         </div>
-        <button onClick={() => { setDefaultStatus('To Do'); setShowCreate(true); }} className="btn-primary btn-sm">
-          <Plus className="w-4 h-4" /> Add Task
+        <button onClick={() => { setDefaultStatus('To Do'); setShowCreate(true); }} className="btn btn-primary btn-md">
+          <Plus size={18} /> Add Task
         </button>
       </div>
 
-      <div className="flex items-center gap-3 mb-5 flex-shrink-0 flex-wrap">
+      <div className="card stagger-1" style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, flexShrink: 0, flexWrap: 'wrap', padding: '16px 20px' }}>
         <input value={filters.search} onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
-          className="input w-48 py-1.5 text-sm" placeholder="Search tasks…" />
-        <select value={filters.priority} onChange={e => setFilters(f => ({ ...f, priority: e.target.value }))} className="input w-36 py-1.5 text-sm">
-          <option value="">All priorities</option>
-          {['Low','Medium','High','Urgent'].map(p => <option key={p} value={p}>{p}</option>)}
+          className="input" style={{ width: 200, padding: '8px 12px' }} placeholder="Search tasks…" />
+        <select value={filters.priority} onChange={e => setFilters(f => ({ ...f, priority: e.target.value }))} className="input" style={{ width: 160, padding: '8px 12px', cursor: 'pointer' }}>
+          <option value="" style={{ background: '#111827' }}>All priorities</option>
+          {['Low','Medium','High','Urgent'].map(p => <option key={p} value={p} style={{ background: '#111827' }}>{p}</option>)}
         </select>
-        <select value={filters.assignedTo} onChange={e => setFilters(f => ({ ...f, assignedTo: e.target.value }))} className="input w-40 py-1.5 text-sm">
-          <option value="">All members</option>
-          {members.map(m => <option key={m.user._id} value={m.user._id}>{m.user.name}</option>)}
+        <select value={filters.assignedTo} onChange={e => setFilters(f => ({ ...f, assignedTo: e.target.value }))} className="input" style={{ width: 180, padding: '8px 12px', cursor: 'pointer' }}>
+          <option value="" style={{ background: '#111827' }}>All members</option>
+          {members.map(m => <option key={m.user._id} value={m.user._id} style={{ background: '#111827' }}>{m.user.name}</option>)}
         </select>
         {(filters.search || filters.priority || filters.assignedTo) && (
-          <button onClick={() => setFilters({ priority:'', assignedTo:'', search:'' })} className="btn-ghost btn-sm text-xs">Clear</button>
+          <button onClick={() => setFilters({ priority:'', assignedTo:'', search:'' })} className="btn btn-ghost btn-sm">Clear Filters</button>
         )}
       </div>
 
-      <div className="flex-1 overflow-x-auto pb-4">
+      <div className="stagger-2" style={{ flex: 1, overflowX: 'auto', paddingBottom: 24, paddingRight: 24 }}>
         <DndContext sensors={sensors} collisionDetection={closestCorners}
-          onDragStart={({ active }) => setActiveTask(tasks.find(t => t._id === active.id) || null)}
+          onDragStart={({ active }) => setActiveTask(tasksList.find(t => t._id === active.id) || null)}
           onDragEnd={handleDragEnd}>
-          <div className="flex gap-4">
+          <div style={{ display: 'flex', gap: 24, paddingBottom: 16 }}>
             {COLUMNS.map(col => <Column key={col} status={col} tasks={byStatus[col]} onAdd={(s) => { setDefaultStatus(s); setShowCreate(true); }} />)}
           </div>
-          <DragOverlay>{activeTask ? <TaskCard task={activeTask} /> : null}</DragOverlay>
+          <DragOverlay>{activeTask ? <TaskCard task={activeTask} isDragging /> : null}</DragOverlay>
         </DndContext>
       </div>
 

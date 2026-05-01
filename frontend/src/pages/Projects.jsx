@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Plus, Loader2, FolderKanban, Users, Calendar, MoreVertical, Trash2, Edit, Archive } from 'lucide-react';
+import { Plus, Loader2, FolderKanban, Calendar, MoreVertical, Trash2, Edit, CheckSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { setProjects, addProject, removeProject, updateProject } from '../store/projectSlice';
 import * as projectApi from '../api/projects';
@@ -10,10 +10,10 @@ import ProjectForm from '../components/Projects/ProjectForm';
 import { format } from 'date-fns';
 
 const STATUS_BADGE = {
-  Active: 'bg-green-900/40 text-green-300',
-  'On Hold': 'bg-yellow-900/40 text-yellow-300',
-  Completed: 'bg-blue-900/40 text-blue-300',
-  Archived: 'bg-gray-800 text-gray-400',
+  Active: { bg: 'rgba(0,213,176,0.15)', color: '#00D5B0', border: 'rgba(0,213,176,0.25)' },
+  'On Hold': { bg: 'rgba(255,162,0,0.15)', color: '#FFA200', border: 'rgba(255,162,0,0.25)' },
+  Completed: { bg: 'rgba(43,140,220,0.15)', color: '#2B8CDC', border: 'rgba(43,140,220,0.25)' },
+  Archived: { bg: 'rgba(255,255,255,0.06)', color: '#B1B4BA', border: 'rgba(255,255,255,0.1)' },
 };
 
 export default function Projects() {
@@ -52,7 +52,7 @@ export default function Projects() {
   };
 
   const handleDelete = async (project) => {
-    if (!confirm(`Delete "${project.name}"? This will remove all tasks too.`)) return;
+    if (!window.confirm(`Delete "${project.name}"? This will remove all tasks too.`)) return;
     try {
       await projectApi.deleteProject(project._id);
       dispatch(removeProject(project._id));
@@ -63,99 +63,125 @@ export default function Projects() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="page-header">
+    <div style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 40 }}>
+      {/* Header */}
+      <div className="animate-enter" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
           <h1 className="page-title">Projects</h1>
-          <p className="text-gray-400 text-sm mt-1">{projects.length} project{projects.length !== 1 ? 's' : ''}</p>
+          <p style={{ color: '#B1B4BA', fontSize: 14, margin: '4px 0 0' }}>{projects.length} project{projects.length !== 1 ? 's' : ''}</p>
         </div>
-        <button onClick={() => setShowCreate(true)} className="btn-primary">
-          <Plus className="w-4 h-4" /> New Project
+        <button onClick={() => setShowCreate(true)} className="btn btn-primary btn-md">
+          <Plus size={18} /> New Project
         </button>
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-primary-400" /></div>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
+          <Loader2 size={32} color="#00D5B0" className="animate-spin" />
+        </div>
       ) : projects.length === 0 ? (
-        <div className="text-center py-20 card">
-          <FolderKanban className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-white mb-1">No projects yet</h3>
-          <p className="text-gray-400 text-sm mb-6">Create your first project to get started</p>
-          <button onClick={() => setShowCreate(true)} className="btn-primary mx-auto">
-            <Plus className="w-4 h-4" /> Create Project
+        <div className="card animate-enter stagger-1" style={{ textAlign: 'center', padding: '80px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <FolderKanban size={48} color="#B1B4BA" style={{ marginBottom: 16 }} />
+          <h3 style={{ fontSize: 18, fontWeight: 600, color: '#F2F4F7', margin: '0 0 8px 0' }}>No projects yet</h3>
+          <p style={{ fontSize: 14, color: '#B1B4BA', margin: '0 0 24px 0' }}>Create your first project to get started</p>
+          <button onClick={() => setShowCreate(true)} className="btn btn-primary btn-md">
+            <Plus size={18} /> Create Project
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {projects.map((project) => (
-            <div key={project._id}
-              className="card p-5 hover:border-gray-700 transition-all duration-200 hover:shadow-lg hover:shadow-black/20 group relative">
-              {/* Color bar */}
-              <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl"
-                style={{ background: project.color || '#6366f1' }} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
+          {projects.map((project, i) => {
+            const statusStyle = STATUS_BADGE[project.status] || STATUS_BADGE.Archived;
+            const delayClass = `stagger-${(i % 5) + 1}`;
+            
+            return (
+              <div key={project._id} className={`card animate-enter ${delayClass}`} style={{ 
+                padding: 24, position: 'relative', overflow: 'hidden',
+                display: 'flex', flexDirection: 'column',
+                transition: 'transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 200ms ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+                
+                {/* Color Top Bar */}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: project.color || '#2B8CDC' }} />
 
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center"
-                    style={{ background: `${project.color || '#6366f1'}30` }}>
-                    <FolderKanban className="w-4 h-4" style={{ color: project.color || '#6366f1' }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                      background: `${project.color || '#2B8CDC'}20`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      <FolderKanban size={20} color={project.color || '#2B8CDC'} />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#F2F4F7', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {project.name}
+                      </h3>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: statusStyle.bg, color: statusStyle.color, border: `1px solid ${statusStyle.border}`, marginTop: 4 }}>
+                        {project.status}
+                      </div>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-white truncate">{project.name}</h3>
-                    <span className={`badge text-xs ${STATUS_BADGE[project.status] || 'bg-gray-800 text-gray-400'}`}>
-                      {project.status}
-                    </span>
-                  </div>
+
+                  {project.myRole === 'Admin' && (
+                    <div style={{ position: 'relative' }}>
+                      <button onClick={(e) => { e.preventDefault(); setMenuOpen(menuOpen === project._id ? null : project._id); }}
+                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, color: '#B1B4BA', borderRadius: 6, outline: 'none' }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                        <MoreVertical size={18} />
+                      </button>
+                      {menuOpen === project._id && (
+                        <div className="animate-slide-down card" style={{
+                          position: 'absolute', right: 0, top: 32, zIndex: 20, width: 140, padding: 4,
+                          boxShadow: '0 12px 32px rgba(0,0,0,0.5)'
+                        }}>
+                          <button onClick={() => { setEditProject(project); setMenuOpen(null); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', background: 'transparent', border: 'none', color: '#F2F4F7', fontSize: 13, cursor: 'pointer', borderRadius: 6, textAlign: 'left' }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                            <Edit size={14} /> Edit
+                          </button>
+                          <button onClick={() => { handleDelete(project); setMenuOpen(null); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', background: 'transparent', border: 'none', color: '#FF3F6D', fontSize: 13, cursor: 'pointer', borderRadius: 6, textAlign: 'left' }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,63,109,0.1)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                            <Trash2 size={14} /> Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                {project.myRole === 'Admin' && (
-                  <div className="relative">
-                    <button onClick={(e) => { e.preventDefault(); setMenuOpen(menuOpen === project._id ? null : project._id); }}
-                      className="btn-ghost p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
-                    {menuOpen === project._id && (
-                      <div className="absolute right-0 top-8 z-20 w-40 card shadow-xl border-gray-700 py-1 animate-fade-in">
-                        <button onClick={() => { setEditProject(project); setMenuOpen(null); }}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white">
-                          <Edit className="w-3.5 h-3.5" /> Edit
-                        </button>
-                        <button onClick={() => { handleDelete(project); setMenuOpen(null); }}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-400 hover:bg-gray-800">
-                          <Trash2 className="w-3.5 h-3.5" /> Delete
-                        </button>
-                      </div>
-                    )}
+                <p className="line-clamp-2" style={{ margin: '0 0 20px 0', fontSize: 14, color: '#B1B4BA', lineHeight: 1.5, minHeight: 42 }}>
+                  {project.description || 'No description provided.'}
+                </p>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#B1B4BA', fontSize: 13, fontWeight: 500 }}>
+                    <CheckSquare size={14} /> {project.taskCount || 0} tasks
                   </div>
-                )}
-              </div>
+                  {project.endDate && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#B1B4BA', fontSize: 13, fontWeight: 500 }}>
+                      <Calendar size={14} /> {format(new Date(project.endDate), 'MMM d, yyyy')}
+                    </div>
+                  )}
+                </div>
 
-              <p className="text-gray-400 text-sm mb-4 line-clamp-2 min-h-[2.5rem]">
-                {project.description || 'No description'}
-              </p>
-
-              <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                <span className="flex items-center gap-1">
-                  <CheckSquare className="w-3.5 h-3.5" /> {project.taskCount || 0} tasks
-                </span>
-                {project.endDate && (
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5" /> {format(new Date(project.endDate), 'MMM d, yyyy')}
-                  </span>
-                )}
-                <span className="badge bg-gray-800 text-gray-400">{project.myRole}</span>
+                <div style={{ display: 'flex', gap: 12, marginTop: 'auto' }}>
+                  <Link to={`/projects/${project._id}`} className="btn btn-secondary btn-sm" style={{ flex: 1 }}>
+                    Details
+                  </Link>
+                  <Link to={`/projects/${project._id}/board`} className="btn btn-primary btn-sm" style={{ flex: 1 }}>
+                    Board
+                  </Link>
+                </div>
               </div>
-
-              <div className="flex gap-2">
-                <Link to={`/projects/${project._id}`} className="btn-secondary flex-1 text-center text-xs py-1.5">
-                  View Details
-                </Link>
-                <Link to={`/projects/${project._id}/board`} className="btn-primary flex-1 text-center text-xs py-1.5">
-                  Open Board
-                </Link>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -169,16 +195,8 @@ export default function Projects() {
         <ProjectForm initialData={editProject} onSubmit={handleUpdate} onCancel={() => setEditProject(null)} />
       </Modal>
 
-      {/* Close menu on outside click */}
-      {menuOpen && <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(null)} />}
+      {/* Close menu overlay */}
+      {menuOpen && <div style={{ position: 'fixed', inset: 0, zIndex: 10 }} onClick={() => setMenuOpen(null)} />}
     </div>
-  );
-}
-
-function CheckSquare({ className }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
   );
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { User, Mail, Lock, Save, Loader2, Camera } from 'lucide-react';
+import { User, Mail, Lock, Save, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { updateUser } from '../store/authSlice';
 import * as authApi from '../api/auth';
@@ -48,48 +48,56 @@ export default function Profile() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
+    <div className="animate-enter" style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 40 }}>
       <div>
         <h1 className="page-title">Profile Settings</h1>
-        <p className="text-gray-400 text-sm mt-1">Manage your account information</p>
+        <p style={{ color: '#B1B4BA', fontSize: 14, margin: '4px 0 0' }}>Manage your account information</p>
       </div>
 
       {/* Avatar + Profile */}
-      <div className="card p-6">
-        <h2 className="font-semibold text-white mb-5 flex items-center gap-2">
-          <User className="w-4 h-4 text-primary-400" /> Profile Information
+      <div className="card stagger-1" style={{ padding: 32 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 600, color: '#F2F4F7', margin: '0 0 24px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <User size={18} color="#00D5B0" /> Profile Information
         </h2>
 
-        {/* Avatar preview */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="relative">
-            <div className="w-16 h-16 rounded-full bg-primary-600 flex items-center justify-center text-white text-2xl font-bold">
-              {user?.name?.charAt(0).toUpperCase()}
-            </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 32 }}>
+          <div style={{
+            width: 72, height: 72, borderRadius: '50%',
+            background: 'linear-gradient(135deg, #2B8CDC 0%, #1a5c96 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#F2F4F7', fontSize: 28, fontWeight: 700,
+            boxShadow: '0 8px 24px rgba(43,140,220,0.3)'
+          }}>
+            {user?.name ? user.name.charAt(0).toUpperCase() : '?'}
           </div>
           <div>
-            <p className="font-medium text-white">{user?.name}</p>
-            <p className="text-sm text-gray-400">{user?.email}</p>
-            <span className={`badge text-xs mt-1 ${user?.isEmailVerified ? 'bg-green-900/40 text-green-300' : 'bg-yellow-900/40 text-yellow-300'}`}>
+            <p style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#F2F4F7' }}>{user?.name}</p>
+            <p style={{ margin: '4px 0 8px 0', fontSize: 14, color: '#B1B4BA' }}>{user?.email}</p>
+            <span style={{ 
+              padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600,
+              background: user?.isEmailVerified ? 'rgba(0,213,176,0.15)' : 'rgba(255,162,0,0.15)',
+              color: user?.isEmailVerified ? '#00D5B0' : '#FFA200',
+              border: `1px solid ${user?.isEmailVerified ? 'rgba(0,213,176,0.25)' : 'rgba(255,162,0,0.25)'}`
+            }}>
               {user?.isEmailVerified ? 'Email verified' : 'Email not verified'}
             </span>
           </div>
         </div>
 
-        <form onSubmit={handleProfileSave} className="space-y-4">
+        <form onSubmit={handleProfileSave} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="form-group">
             <label className="label">Full name</label>
             <input value={profileForm.name} onChange={e => setProfileForm(f => ({ ...f, name: e.target.value }))}
               className="input" placeholder="Your name" required minLength={2} maxLength={50} />
           </div>
           <div className="form-group">
-            <label className="label">Avatar URL <span className="text-gray-500 font-normal">(optional)</span></label>
+            <label className="label">Avatar URL <span style={{ color: 'rgba(242,244,247,0.4)', fontWeight: 400 }}>(optional)</span></label>
             <input value={profileForm.avatar} onChange={e => setProfileForm(f => ({ ...f, avatar: e.target.value }))}
               className="input" placeholder="https://example.com/avatar.jpg" type="url" />
           </div>
-          <div className="flex justify-end">
-            <button type="submit" disabled={profileLoading} className="btn-primary">
-              {profileLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+            <button type="submit" disabled={profileLoading} className="btn btn-primary btn-md">
+              {profileLoading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
               Save Profile
             </button>
           </div>
@@ -97,16 +105,18 @@ export default function Profile() {
       </div>
 
       {/* Change Password */}
-      <div className="card p-6">
-        <h2 className="font-semibold text-white mb-5 flex items-center gap-2">
-          <Lock className="w-4 h-4 text-primary-400" /> Change Password
+      <div className="card stagger-2" style={{ padding: 32 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 600, color: '#F2F4F7', margin: '0 0 24px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Lock size={18} color="#00D5B0" /> Change Password
         </h2>
 
         {passError && (
-          <div className="mb-4 p-3 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm">{passError}</div>
+          <div style={{ padding: '12px 16px', background: 'rgba(255,63,109,0.1)', border: '1px solid rgba(255,63,109,0.2)', borderRadius: 12, color: '#FF3F6D', fontSize: 14, marginBottom: 20 }}>
+            {passError}
+          </div>
         )}
 
-        <form onSubmit={handlePasswordSave} className="space-y-4">
+        <form onSubmit={handlePasswordSave} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="form-group">
             <label className="label">Current password</label>
             <input type="password" value={passForm.currentPassword}
@@ -125,9 +135,9 @@ export default function Profile() {
               onChange={e => setPassForm(f => ({ ...f, confirmPassword: e.target.value }))}
               className="input" required placeholder="••••••••" />
           </div>
-          <div className="flex justify-end">
-            <button type="submit" disabled={passLoading} className="btn-primary">
-              {passLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+            <button type="submit" disabled={passLoading} className="btn btn-primary btn-md">
+              {passLoading ? <Loader2 size={18} className="animate-spin" /> : <Lock size={18} />}
               Update Password
             </button>
           </div>
@@ -135,18 +145,18 @@ export default function Profile() {
       </div>
 
       {/* Account Info */}
-      <div className="card p-5">
-        <h2 className="font-semibold text-white mb-4 flex items-center gap-2">
-          <Mail className="w-4 h-4 text-primary-400" /> Account Info
+      <div className="card stagger-3" style={{ padding: 32 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 600, color: '#F2F4F7', margin: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Mail size={18} color="#00D5B0" /> Account Info
         </h2>
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center justify-between py-2 border-b border-gray-800">
-            <span className="text-gray-400">Email</span>
-            <span className="text-gray-200">{user?.email}</span>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <span style={{ color: '#B1B4BA', fontSize: 14 }}>Email</span>
+            <span style={{ color: '#F2F4F7', fontSize: 14, fontWeight: 500 }}>{user?.email}</span>
           </div>
-          <div className="flex items-center justify-between py-2">
-            <span className="text-gray-400">Member since</span>
-            <span className="text-gray-200">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0' }}>
+            <span style={{ color: '#B1B4BA', fontSize: 14 }}>Member since</span>
+            <span style={{ color: '#F2F4F7', fontSize: 14, fontWeight: 500 }}>
               {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
             </span>
           </div>

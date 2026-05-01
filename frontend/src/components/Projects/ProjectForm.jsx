@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
-const COLORS = ['#6366f1','#8b5cf6','#ec4899','#ef4444','#f97316','#eab308','#22c55e','#14b8a6','#3b82f6','#06b6d4'];
+const COLORS = ['#2B8CDC', '#00D5B0', '#FFA200', '#FF3F6D', '#8b5cf6', '#ec4899', '#f97316', '#22c55e'];
 const STATUSES = ['Active', 'On Hold', 'Completed', 'Archived'];
 
 export default function ProjectForm({ initialData, onSubmit, onCancel }) {
@@ -11,7 +11,7 @@ export default function ProjectForm({ initialData, onSubmit, onCancel }) {
     startDate: initialData?.startDate ? initialData.startDate.slice(0, 10) : '',
     endDate: initialData?.endDate ? initialData.endDate.slice(0, 10) : '',
     status: initialData?.status || 'Active',
-    color: initialData?.color || '#6366f1',
+    color: initialData?.color || '#2B8CDC',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -36,13 +36,18 @@ export default function ProjectForm({ initialData, onSubmit, onCancel }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {error && (
-        <div className="p-3 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm">{error}</div>
+        <div style={{
+          padding: '12px 16px', background: 'rgba(195,40,77,0.1)', border: '1px solid rgba(195,40,77,0.3)',
+          borderRadius: 12, color: '#FF3F6D', fontSize: 14,
+        }}>
+          {error}
+        </div>
       )}
 
       <div className="form-group">
-        <label className="label">Project name <span className="text-red-400">*</span></label>
+        <label className="label">Project name <span style={{ color: '#FF3F6D' }}>*</span></label>
         <input name="name" value={form.name} onChange={handleChange} required
           className="input" placeholder="My Awesome Project" minLength={3} maxLength={100} />
       </div>
@@ -50,12 +55,14 @@ export default function ProjectForm({ initialData, onSubmit, onCancel }) {
       <div className="form-group">
         <label className="label">Description</label>
         <textarea name="description" value={form.description} onChange={handleChange}
-          className="input resize-none" rows={3} placeholder="What is this project about?"
+          className="input" style={{ resize: 'none' }} rows={3} placeholder="What is this project about?"
           maxLength={500} />
-        <p className="text-xs text-gray-500 text-right">{form.description.length}/500</p>
+        <p style={{ margin: '4px 0 0', fontSize: 12, color: 'rgba(242,244,247,0.4)', textAlign: 'right' }}>
+          {form.description.length}/500
+        </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div className="form-group">
           <label className="label">Start date</label>
           <input type="date" name="startDate" value={form.startDate} onChange={handleChange} className="input" />
@@ -68,26 +75,31 @@ export default function ProjectForm({ initialData, onSubmit, onCancel }) {
 
       <div className="form-group">
         <label className="label">Status</label>
-        <select name="status" value={form.status} onChange={handleChange} className="input">
-          {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+        <select name="status" value={form.status} onChange={handleChange} className="input" style={{ cursor: 'pointer' }}>
+          {STATUSES.map(s => <option key={s} value={s} style={{ background: '#111827' }}>{s}</option>)}
         </select>
       </div>
 
       <div className="form-group">
-        <label className="label">Color</label>
-        <div className="flex gap-2 flex-wrap">
+        <label className="label">Color theme</label>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           {COLORS.map(c => (
             <button key={c} type="button" onClick={() => setForm(f => ({ ...f, color: c }))}
-              className={`w-7 h-7 rounded-full transition-transform ${form.color === c ? 'scale-125 ring-2 ring-white ring-offset-2 ring-offset-gray-900' : 'hover:scale-110'}`}
-              style={{ background: c }} />
+              style={{
+                width: 28, height: 28, borderRadius: '50%', background: c, border: 'none', cursor: 'pointer',
+                transition: 'transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 200ms ease',
+                transform: form.color === c ? 'scale(1.2)' : 'scale(1)',
+                boxShadow: form.color === c ? `0 0 0 2px #0D1421, 0 0 0 4px ${c}` : 'none'
+              }} 
+            />
           ))}
         </div>
       </div>
 
-      <div className="flex gap-3 pt-2">
-        <button type="button" onClick={onCancel} className="btn-secondary flex-1">Cancel</button>
-        <button type="submit" disabled={loading} className="btn-primary flex-1">
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+      <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+        <button type="button" onClick={onCancel} className="btn btn-secondary btn-md" style={{ flex: 1 }}>Cancel</button>
+        <button type="submit" disabled={loading} className="btn btn-primary btn-md" style={{ flex: 1 }}>
+          {loading ? <Loader2 size={18} className="animate-spin" /> : null}
           {initialData ? 'Save Changes' : 'Create Project'}
         </button>
       </div>

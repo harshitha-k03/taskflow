@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { Eye, EyeOff, Zap, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { setCredentials } from '../store/authSlice';
 import * as authApi from '../api/auth';
@@ -29,97 +29,105 @@ export default function Login() {
       toast.success(`Welcome back, ${data.user.name}!`);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setError(err.response?.data?.message || 'Login failed. Check your credentials.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-      {/* Background gradient */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary-600/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-violet-600/20 rounded-full blur-3xl" />
-      </div>
+    <div className="flex items-center justify-center p-4 relative overflow-hidden" style={{ minHeight: '100vh' }}>
+      {/* Ambient glows */}
+      <div style={{
+        position: 'absolute', top: '-20%', right: '-10%', width: '600px', height: '600px',
+        background: 'radial-gradient(circle, rgba(0,213,176,0.12) 0%, transparent 60%)',
+        pointerEvents: 'none', filter: 'blur(40px)'
+      }} />
+      <div style={{
+        position: 'absolute', bottom: '-20%', left: '-10%', width: '600px', height: '600px',
+        background: 'radial-gradient(circle, rgba(43,140,220,0.12) 0%, transparent 60%)',
+        pointerEvents: 'none', filter: 'blur(40px)'
+      }} />
 
-      <div className="w-full max-w-md relative z-10 animate-slide-up">
-        {/* Logo */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-600/30">
-            <Zap className="w-5 h-5 text-white" />
+      <div style={{ width: '100%', maxWidth: '420px', position: 'relative', zIndex: 1 }} className="animate-enter">
+        {/* Logo mark */}
+        <div className="flex flex-col items-center justify-center gap-4 mb-8">
+          <div style={{
+            width: 56, height: 56, borderRadius: 16,
+            background: 'linear-gradient(96.54deg, #2B8CDC 5.62%, #00D5B0 91.41%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 12px 40px rgba(43,140,220,0.4)',
+          }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#F2F4F7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 12l2 2 4-4"/><rect x="3" y="3" width="18" height="18" rx="4"/>
+            </svg>
           </div>
-          <span className="text-2xl font-bold text-white">TaskFlow</span>
         </div>
 
-        <div className="card p-8 shadow-2xl">
-          <div className="mb-6 text-center">
-            <h1 className="text-2xl font-bold text-white mb-1">Welcome back</h1>
-            <p className="text-gray-400 text-sm">Sign in to your account to continue</p>
+        {/* Card */}
+        <div className="card" style={{ padding: '40px 32px' }}>
+          <div style={{ marginBottom: 32, textAlign: 'center' }}>
+            <h1 className="page-title" style={{ marginBottom: 8 }}>Sign in to TaskFlow</h1>
+            <p style={{ fontSize: 14, color: '#B1B4BA' }}>
+              Welcome back. Let's get things done.
+            </p>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm animate-fade-in">
+            <div className="animate-enter stagger-1" style={{
+              marginBottom: 20, padding: '12px 16px',
+              background: 'rgba(195,40,77,0.1)', border: '1px solid rgba(195,40,77,0.3)',
+              borderRadius: 12, color: '#FF3F6D', fontSize: 14,
+              display: 'flex', alignItems: 'center', gap: 8
+            }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="form-group">
-              <label htmlFor="email" className="label">Email address</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={form.email}
-                onChange={handleChange}
-                className="input"
-                placeholder="you@example.com"
-              />
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div className="form-group animate-enter stagger-2">
+              <label className="label">Email address</label>
+              <input id="email" name="email" type="email" required value={form.email}
+                onChange={handleChange} className="input" placeholder="you@example.com" />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="password" className="label">Password</label>
-              <div className="relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPass ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  required
-                  value={form.password}
-                  onChange={handleChange}
-                  className="input pr-10"
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
-                >
-                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            <div className="form-group animate-enter stagger-3">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                <label className="label" style={{ margin: 0 }}>Password</label>
+                <Link to="/forgot-password" style={{ fontSize: 12, color: '#00D5B0', textDecoration: 'none', fontWeight: 500 }}>
+                  Forgot password?
+                </Link>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <input id="password" name="password" type={showPass ? 'text' : 'password'}
+                  required value={form.password} onChange={handleChange}
+                  className="input" placeholder="••••••••" style={{ paddingRight: 44 }} />
+                <button type="button" onClick={() => setShowPass(!showPass)} style={{
+                  position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', color: '#B1B4BA',
+                  display: 'flex', alignItems: 'center', padding: 4, outline: 'none'
+                }}>
+                  {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
 
-            <div className="flex justify-end">
-              <Link to="/forgot-password" className="text-sm text-primary-400 hover:text-primary-300 transition-colors">
-                Forgot password?
-              </Link>
-            </div>
-
-            <button type="submit" disabled={loading} className="btn-primary w-full btn-lg">
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              {loading ? 'Signing in…' : 'Sign in'}
+            <button type="submit" disabled={loading} className="btn btn-primary btn-lg animate-enter stagger-4"
+              style={{ width: '100%', marginTop: 8 }}>
+              {loading
+                ? <Loader2 size={20} className="animate-spin" />
+                : <ArrowRight size={20} />}
+              {loading ? 'Signing in…' : 'Continue'}
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-400 mt-6">
-            Don't have an account?{' '}
-            <Link to="/signup" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
-              Create one
+          <p className="animate-enter stagger-5" style={{ textAlign: 'center', fontSize: 14, color: '#B1B4BA', marginTop: 32, marginBottom: 0 }}>
+            No account?{' '}
+            <Link to="/signup" style={{ color: '#00D5B0', textDecoration: 'none', fontWeight: 600 }}>
+              Sign up free
             </Link>
           </p>
         </div>

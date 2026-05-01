@@ -11,19 +11,31 @@ import {
 import { getDashboard } from '../api/tasks';
 import { format, isPast } from 'date-fns';
 
-const PRIORITY_COLORS = { Low: '#6b7280', Medium: '#3b82f6', High: '#f97316', Urgent: '#ef4444' };
-const STATUS_COLORS = { 'To Do': '#6b7280', 'In Progress': '#3b82f6', 'In Review': '#eab308', Done: '#22c55e' };
+// Nefee Color Tokens
+const PRIORITY_COLORS = { Low: '#B1B4BA', Medium: '#2B8CDC', High: '#FFA200', Urgent: '#FF3F6D' };
+const STATUS_COLORS = { 'To Do': '#B1B4BA', 'In Progress': '#2B8CDC', 'In Review': '#FFA200', Done: '#00D5B0' };
 
-function StatCard({ icon: Icon, label, value, color, sub }) {
+function StatCard({ icon: Icon, label, value, gradient, sub, delayClass }) {
   return (
-    <div className="card p-5 flex items-start gap-4 hover:border-gray-700 transition-colors">
-      <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${color}`}>
-        <Icon className="w-5 h-5 text-white" />
+    <div className={`card animate-enter ${delayClass}`} style={{ 
+      padding: '24px', 
+      display: 'flex', 
+      alignItems: 'flex-start', 
+      gap: '16px',
+      transition: 'transform 160ms cubic-bezier(0.23, 1, 0.32, 1), background 200ms ease'
+    }}>
+      <div style={{
+        width: 48, height: 48, borderRadius: 14,
+        background: gradient,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
+      }}>
+        <Icon size={24} color="#F2F4F7" />
       </div>
       <div>
-        <p className="text-2xl font-bold text-white">{value}</p>
-        <p className="text-sm text-gray-400">{label}</p>
-        {sub && <p className="text-xs text-gray-500 mt-0.5">{sub}</p>}
+        <p style={{ fontSize: 28, fontWeight: 700, color: '#F2F4F7', margin: 0, lineHeight: 1.2 }}>{value}</p>
+        <p style={{ fontSize: 13, color: '#B1B4BA', margin: '4px 0 0', fontWeight: 500 }}>{label}</p>
+        {sub && <p style={{ fontSize: 12, color: 'rgba(242,244,247,0.4)', margin: '4px 0 0' }}>{sub}</p>}
       </div>
     </div>
   );
@@ -43,8 +55,8 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-6 h-6 animate-spin text-primary-400" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+        <Loader2 size={32} color="#00D5B0" className="animate-spin" />
       </div>
     );
   }
@@ -56,121 +68,149 @@ export default function Dashboard() {
     ? Object.entries(data.tasksByPriority).map(([name, value]) => ({ name, value }))
     : [];
 
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 1200, margin: '0 auto' }}>
+      
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">
-          Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'},{' '}
+      <div className="animate-enter" style={{ marginBottom: 8 }}>
+        <h1 className="page-title">
+          Good {greeting},{' '}
           <span className="text-gradient">{user?.name?.split(' ')[0]}</span> 👋
         </h1>
-        <p className="text-gray-400 text-sm mt-1">{format(new Date(), 'EEEE, MMMM do yyyy')}</p>
+        <p style={{ color: '#B1B4BA', fontSize: 14, margin: '6px 0 0' }}>
+          {format(new Date(), 'EEEE, MMMM do yyyy')}
+        </p>
       </div>
 
       {/* Overdue alert */}
       {data?.overdueTasks > 0 && (
-        <div className="flex items-center gap-3 p-4 bg-red-900/20 border border-red-800/50 rounded-xl animate-slide-up">
-          <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
-          <p className="text-sm text-red-300">
-            You have <strong>{data.overdueTasks}</strong> overdue task{data.overdueTasks !== 1 ? 's' : ''} that need attention.
+        <div className="animate-enter stagger-1" style={{
+          display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px',
+          background: 'linear-gradient(90deg, rgba(195,40,77,0.15) 0%, rgba(195,40,77,0.05) 100%)',
+          borderLeft: '4px solid #FF3F6D',
+          borderRadius: '0 12px 12px 0',
+        }}>
+          <AlertTriangle size={20} color="#FF3F6D" style={{ flexShrink: 0 }} />
+          <p style={{ margin: 0, fontSize: 14, color: '#F2F4F7' }}>
+            You have <strong style={{ color: '#FF3F6D' }}>{data.overdueTasks}</strong> overdue task{data.overdueTasks !== 1 ? 's' : ''} that need attention.
           </p>
         </div>
       )}
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={FolderKanban} label="Total Projects" value={data?.totalProjects ?? 0}
-          color="bg-primary-600" />
-        <StatCard icon={CheckSquare} label="Total Tasks" value={data?.totalTasks ?? 0}
-          color="bg-blue-600" />
-        <StatCard icon={TrendingUp} label="Completion Rate" value={`${data?.completionRate ?? 0}%`}
-          color="bg-green-600" />
-        <StatCard icon={Clock} label="Done This Week" value={data?.completedThisWeek ?? 0}
-          color="bg-violet-600" sub={`${data?.completedThisMonth ?? 0} this month`} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
+        <StatCard delayClass="stagger-1" icon={FolderKanban} label="Total Projects" value={data?.totalProjects ?? 0}
+          gradient="linear-gradient(135deg, #2B8CDC 0%, #1a5c96 100%)" />
+        <StatCard delayClass="stagger-2" icon={CheckSquare} label="Total Tasks" value={data?.totalTasks ?? 0}
+          gradient="linear-gradient(135deg, #FFA200 0%, #b37300 100%)" />
+        <StatCard delayClass="stagger-3" icon={TrendingUp} label="Completion Rate" value={`${data?.completionRate ?? 0}%`}
+          gradient="linear-gradient(135deg, #00D5B0 0%, #008a72 100%)" />
+        <StatCard delayClass="stagger-4" icon={Clock} label="Done This Week" value={data?.completedThisWeek ?? 0}
+          gradient="linear-gradient(135deg, #8b5cf6 0%, #5b21b6 100%)" sub={`${data?.completedThisMonth ?? 0} this month`} />
       </div>
 
-      {/* Charts + My tasks */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Main Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20, alignItems: 'start' }}>
+        
         {/* Status Pie */}
-        <div className="card p-5">
-          <h3 className="text-sm font-semibold text-white mb-4">Tasks by Status</h3>
+        <div className="card animate-enter stagger-5" style={{ padding: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: '#F2F4F7', marginBottom: 20, margin: 0 }}>Tasks by Status</h3>
           {statusData.length > 0 ? (
             <>
-              <ResponsiveContainer width="100%" height={160}>
+              <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
-                  <Pie data={statusData} cx="50%" cy="50%" innerRadius={45} outerRadius={70}
-                    dataKey="value" paddingAngle={3}>
+                  <Pie data={statusData} cx="50%" cy="50%" innerRadius={55} outerRadius={80}
+                    dataKey="value" paddingAngle={4} stroke="none">
                     {statusData.map((entry) => (
-                      <Cell key={entry.name} fill={STATUS_COLORS[entry.name] || '#6b7280'} />
+                      <Cell key={entry.name} fill={STATUS_COLORS[entry.name] || '#B1B4BA'} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: '8px', color: '#f9fafb' }} />
+                  <Tooltip 
+                    contentStyle={{ background: 'rgba(17, 24, 39, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, backdropFilter: 'blur(8px)' }}
+                    itemStyle={{ color: '#F2F4F7', fontSize: 13 }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center', marginTop: 16 }}>
                 {statusData.map((s) => (
-                  <span key={s.name} className="flex items-center gap-1 text-xs text-gray-400">
-                    <span className="w-2 h-2 rounded-full" style={{ background: STATUS_COLORS[s.name] }} />
-                    {s.name} ({s.value})
+                  <span key={s.name} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#B1B4BA', fontWeight: 500 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS_COLORS[s.name], boxShadow: `0 0 8px ${STATUS_COLORS[s.name]}` }} />
+                    {s.name} <span style={{ color: '#F2F4F7' }}>{s.value}</span>
                   </span>
                 ))}
               </div>
             </>
           ) : (
-            <p className="text-gray-500 text-sm text-center py-8">No tasks yet</p>
+            <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#B1B4BA', fontSize: 13 }}>No tasks yet</div>
           )}
         </div>
 
         {/* Priority Bar */}
-        <div className="card p-5">
-          <h3 className="text-sm font-semibold text-white mb-4">Tasks by Priority</h3>
+        <div className="card animate-enter stagger-5" style={{ padding: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: '#F2F4F7', marginBottom: 20, margin: 0 }}>Tasks by Priority</h3>
           {priorityData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={priorityData} barSize={28}>
-                <XAxis dataKey="name" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: '8px', color: '#f9fafb' }} />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+            <ResponsiveContainer width="100%" height={236}>
+              <BarChart data={priorityData} barSize={36} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <XAxis dataKey="name" tick={{ fill: '#B1B4BA', fontSize: 12 }} axisLine={false} tickLine={false} dy={10} />
+                <YAxis tick={{ fill: '#B1B4BA', fontSize: 12 }} axisLine={false} tickLine={false} dx={-10} />
+                <Tooltip 
+                  cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                  contentStyle={{ background: 'rgba(17, 24, 39, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, backdropFilter: 'blur(8px)' }}
+                />
+                <Bar dataKey="value" radius={[6, 6, 6, 6]}>
                   {priorityData.map((entry) => (
-                    <Cell key={entry.name} fill={PRIORITY_COLORS[entry.name] || '#6b7280'} />
+                    <Cell key={entry.name} fill={PRIORITY_COLORS[entry.name] || '#B1B4BA'} />
                   ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-gray-500 text-sm text-center py-8">No tasks yet</p>
+            <div style={{ height: 236, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#B1B4BA', fontSize: 13 }}>No tasks yet</div>
           )}
         </div>
 
-        {/* My tasks */}
-        <div className="card p-5">
-          <h3 className="text-sm font-semibold text-white mb-4">My Open Tasks</h3>
-          <div className="space-y-2">
+        {/* My Tasks List */}
+        <div className="card animate-enter stagger-5" style={{ padding: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: '#F2F4F7', marginBottom: 16, margin: 0 }}>My Open Tasks</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {data?.myTasks?.length > 0 ? (
               data.myTasks.map((task) => (
-                <Link key={task._id} to={`/tasks/${task._id}`}
-                  className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-gray-800 transition-colors group">
-                  <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${
-                    task.priority === 'Urgent' ? 'bg-red-400' :
-                    task.priority === 'High' ? 'bg-orange-400' :
-                    task.priority === 'Medium' ? 'bg-blue-400' : 'bg-gray-500'}`}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-200 group-hover:text-white truncate">{task.title}</p>
+                <Link key={task._id} to={`/projects/${task.project}/tasks?task=${task._id}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '12px',
+                    borderRadius: 12, background: 'rgba(255,255,255,0.03)',
+                    textDecoration: 'none', transition: 'background 150ms ease, transform 150ms ease'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.transform = 'translateX(4px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.transform = 'translateX(0)'; }}
+                >
+                  <div style={{
+                    width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                    background: PRIORITY_COLORS[task.priority] || PRIORITY_COLORS.Low,
+                    boxShadow: `0 0 8px ${PRIORITY_COLORS[task.priority] || PRIORITY_COLORS.Low}`
+                  }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p className="line-clamp-2" style={{ margin: 0, fontSize: 14, color: '#F2F4F7', fontWeight: 500, lineHeight: 1.4 }}>{task.title}</p>
                     {task.dueDate && (
-                      <p className={`text-xs mt-0.5 ${isPast(new Date(task.dueDate)) ? 'text-red-400' : 'text-gray-500'}`}>
-                        Due {format(new Date(task.dueDate), 'MMM d')}
+                      <p style={{ margin: '4px 0 0', fontSize: 12, color: isPast(new Date(task.dueDate)) ? '#FF3F6D' : '#B1B4BA' }}>
+                        Due {format(new Date(task.dueDate), 'MMM d, yyyy')}
                       </p>
                     )}
                   </div>
-                  <ArrowRight className="w-3 h-3 text-gray-600 group-hover:text-gray-400 flex-shrink-0 mt-1" />
+                  <ArrowRight size={16} color="#B1B4BA" style={{ flexShrink: 0 }} />
                 </Link>
               ))
             ) : (
-              <p className="text-gray-500 text-sm text-center py-8">No tasks assigned to you 🎉</p>
+              <div style={{ padding: '32px 0', textAlign: 'center', color: '#B1B4BA', fontSize: 14 }}>
+                No tasks assigned to you 🎉
+              </div>
             )}
           </div>
         </div>
+
       </div>
     </div>
   );

@@ -39,11 +39,18 @@ export default function TaskForm({ projectId, members = [], defaultStatus = 'To 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {error && <div className="p-3 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm">{error}</div>}
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {error && (
+        <div style={{
+          padding: '12px 16px', background: 'rgba(195,40,77,0.1)', border: '1px solid rgba(195,40,77,0.3)',
+          borderRadius: 12, color: '#FF3F6D', fontSize: 14,
+        }}>
+          {error}
+        </div>
+      )}
 
       <div className="form-group">
-        <label className="label">Task title <span className="text-red-400">*</span></label>
+        <label className="label">Task title <span style={{ color: '#FF3F6D' }}>*</span></label>
         <input name="title" value={form.title} onChange={handleChange} required
           className="input" placeholder="Describe the task…" minLength={3} maxLength={200} />
       </div>
@@ -51,30 +58,30 @@ export default function TaskForm({ projectId, members = [], defaultStatus = 'To 
       <div className="form-group">
         <label className="label">Description</label>
         <textarea name="description" value={form.description} onChange={handleChange}
-          className="input resize-none" rows={3} placeholder="Add more details…" maxLength={1000} />
+          className="input" style={{ resize: 'none' }} rows={3} placeholder="Add more details…" maxLength={1000} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div className="form-group">
           <label className="label">Status</label>
-          <select name="status" value={form.status} onChange={handleChange} className="input">
-            {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+          <select name="status" value={form.status} onChange={handleChange} className="input" style={{ cursor: 'pointer' }}>
+            {STATUSES.map(s => <option key={s} value={s} style={{ background: '#111827' }}>{s}</option>)}
           </select>
         </div>
         <div className="form-group">
           <label className="label">Priority</label>
-          <select name="priority" value={form.priority} onChange={handleChange} className="input">
-            {PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
+          <select name="priority" value={form.priority} onChange={handleChange} className="input" style={{ cursor: 'pointer' }}>
+            {PRIORITIES.map(p => <option key={p} value={p} style={{ background: '#111827' }}>{p}</option>)}
           </select>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div className="form-group">
           <label className="label">Assign to</label>
-          <select name="assignedTo" value={form.assignedTo} onChange={handleChange} className="input">
-            <option value="">Unassigned</option>
-            {members.map(m => <option key={m.user._id} value={m.user._id}>{m.user.name}</option>)}
+          <select name="assignedTo" value={form.assignedTo} onChange={handleChange} className="input" style={{ cursor: 'pointer' }}>
+            <option value="" style={{ background: '#111827' }}>Unassigned</option>
+            {members.map(m => <option key={m.user._id} value={m.user._id} style={{ background: '#111827' }}>{m.user.name}</option>)}
           </select>
         </div>
         <div className="form-group">
@@ -84,15 +91,15 @@ export default function TaskForm({ projectId, members = [], defaultStatus = 'To 
       </div>
 
       <div className="form-group">
-        <label className="label">Labels <span className="text-gray-500 font-normal">(comma-separated)</span></label>
+        <label className="label">Labels <span style={{ color: 'rgba(242,244,247,0.4)', fontWeight: 400 }}>(comma-separated)</span></label>
         <input name="labels" value={form.labels} onChange={handleChange}
           className="input" placeholder="bug, feature, design" />
       </div>
 
-      <div className="flex gap-3 pt-2">
-        <button type="button" onClick={onCancel} className="btn-secondary flex-1">Cancel</button>
-        <button type="submit" disabled={loading} className="btn-primary flex-1">
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+      <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+        <button type="button" onClick={onCancel} className="btn btn-secondary btn-md" style={{ flex: 1 }}>Cancel</button>
+        <button type="submit" disabled={loading} className="btn btn-primary btn-md" style={{ flex: 1 }}>
+          {loading ? <Loader2 size={18} className="animate-spin" /> : null}
           {initialData ? 'Save Changes' : 'Create Task'}
         </button>
       </div>

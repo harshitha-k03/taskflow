@@ -13,12 +13,18 @@ import Modal from '../components/Common/Modal';
 import TaskForm from '../components/Tasks/TaskForm';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 
-const STATUS_STYLES = {
-  'To Do': 'badge-todo', 'In Progress': 'badge-inprogress',
-  'In Review': 'badge-inreview', Done: 'badge-done',
+const STATUS_BADGE = {
+  'To Do': { bg: 'rgba(255,255,255,0.06)', color: '#B1B4BA', border: 'rgba(255,255,255,0.1)' },
+  'In Progress': { bg: 'rgba(43,140,220,0.15)', color: '#2B8CDC', border: 'rgba(43,140,220,0.25)' },
+  'In Review': { bg: 'rgba(255,162,0,0.15)', color: '#FFA200', border: 'rgba(255,162,0,0.25)' },
+  Done: { bg: 'rgba(0,213,176,0.15)', color: '#00D5B0', border: 'rgba(0,213,176,0.25)' },
 };
-const PRIORITY_STYLES = {
-  Low: 'badge-low', Medium: 'badge-medium', High: 'badge-high', Urgent: 'badge-urgent',
+
+const PRIORITY_BADGE = {
+  Low: { bg: 'rgba(255,255,255,0.06)', color: '#B1B4BA', border: 'rgba(255,255,255,0.1)' },
+  Medium: { bg: 'rgba(43,140,220,0.15)', color: '#2B8CDC', border: 'rgba(43,140,220,0.25)' },
+  High: { bg: 'rgba(255,162,0,0.15)', color: '#FFA200', border: 'rgba(255,162,0,0.25)' },
+  Urgent: { bg: 'rgba(255,63,109,0.15)', color: '#FF3F6D', border: 'rgba(255,63,109,0.25)' },
 };
 
 export default function TaskDetail() {
@@ -61,7 +67,7 @@ export default function TaskDetail() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Delete this task permanently?')) return;
+    if (!window.confirm('Delete this task permanently?')) return;
     try {
       await deleteTask(id);
       dispatch(removeTask(id));
@@ -87,176 +93,169 @@ export default function TaskDetail() {
     }
   };
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-primary-400" /></div>;
-  if (!task) return <div className="text-center py-20 text-gray-400">Task not found</div>;
+  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}><Loader2 size={32} color="#00D5B0" className="animate-spin" /></div>;
+  if (!task) return <div style={{ textAlign: 'center', padding: '80px 0', color: '#B1B4BA' }}>Task not found</div>;
 
   const isOverdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== 'Done';
+  const statusStyle = STATUS_BADGE[task.status] || STATUS_BADGE['To Do'];
+  const priorityStyle = PRIORITY_BADGE[task.priority] || PRIORITY_BADGE.Low;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
-      {/* Back + Actions */}
-      <div className="flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-400 hover:text-white text-sm transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Back
+    <div className="animate-enter" style={{ maxWidth: 1000, margin: '0 auto', paddingBottom: 40, display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* Header Actions */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <button onClick={() => navigate(-1)} style={{
+          display: 'flex', alignItems: 'center', gap: 8, background: 'transparent', border: 'none',
+          color: '#B1B4BA', cursor: 'pointer', fontSize: 14, transition: 'color 150ms ease'
+        }} onMouseEnter={(e) => e.currentTarget.style.color = '#F2F4F7'} onMouseLeave={(e) => e.currentTarget.style.color = '#B1B4BA'}>
+          <ArrowLeft size={16} /> Back
         </button>
-        <div className="flex gap-2">
-          <button onClick={() => setShowEdit(true)} className="btn-secondary btn-sm">
-            <Edit className="w-3.5 h-3.5" /> Edit
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button onClick={() => setShowEdit(true)} className="btn btn-secondary btn-sm">
+            <Edit size={16} /> Edit
           </button>
-          <button onClick={handleDelete} className="btn-danger btn-sm">
-            <Trash2 className="w-3.5 h-3.5" /> Delete
+          <button onClick={handleDelete} className="btn btn-danger btn-sm">
+            <Trash2 size={16} /> Delete
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main content */}
-        <div className="lg:col-span-2 space-y-5">
-          <div className="card p-6">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="flex-1">
-                <h1 className="text-xl font-bold text-white leading-tight">{task.title}</h1>
-                {task.project && (
-                  <Link to={`/projects/${task.project._id}/board`}
-                    className="text-sm text-primary-400 hover:text-primary-300 mt-1 inline-block transition-colors">
-                    {task.project.name}
-                  </Link>
-                )}
-              </div>
-            </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, alignItems: 'start' }}>
+        {/* Main Content */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, gridColumn: 'span 2' }}>
+          <div className="card stagger-1" style={{ padding: 32 }}>
+            <h1 style={{ fontSize: 24, fontWeight: 700, color: '#F2F4F7', margin: '0 0 8px 0', lineHeight: 1.3 }}>{task.title}</h1>
+            {task.project && (
+              <Link to={`/projects/${task.project._id}/board`} style={{
+                fontSize: 14, color: '#00D5B0', textDecoration: 'none', display: 'inline-block', marginBottom: 24
+              }}>
+                {task.project.name}
+              </Link>
+            )}
 
-            <div className="flex flex-wrap gap-2 mb-5">
-              <span className={`badge ${STATUS_STYLES[task.status]}`}>{task.status}</span>
-              <span className={`badge ${PRIORITY_STYLES[task.priority]}`}>
-                <Flag className="w-3 h-3 mr-1" />{task.priority}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
+              <span style={{ padding: '4px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: statusStyle.bg, color: statusStyle.color, border: `1px solid ${statusStyle.border}` }}>
+                {task.status}
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: priorityStyle.bg, color: priorityStyle.color, border: `1px solid ${priorityStyle.border}` }}>
+                <Flag size={12} /> {task.priority}
               </span>
               {task.labels?.map(label => (
-                <span key={label} className="badge bg-primary-900/30 text-primary-300">
-                  <Tag className="w-3 h-3 mr-1" />{label}
+                <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 8, fontSize: 12, fontWeight: 500, background: 'rgba(43,140,220,0.1)', color: '#2B8CDC', border: '1px solid rgba(43,140,220,0.2)' }}>
+                  <Tag size={12} /> {label}
                 </span>
               ))}
             </div>
 
-            <div className="prose prose-invert prose-sm max-w-none">
-              <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
-                {task.description || <span className="text-gray-500 italic">No description provided.</span>}
-              </p>
+            <div style={{ color: '#F2F4F7', fontSize: 15, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+              {task.description || <span style={{ color: '#B1B4BA', fontStyle: 'italic' }}>No description provided.</span>}
             </div>
           </div>
 
           {/* Comments */}
-          <div className="card p-5">
-            <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-primary-400" />
-              Comments <span className="text-gray-500 font-normal text-sm">({comments.length})</span>
+          <div className="card stagger-2" style={{ padding: 32 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#F2F4F7', margin: '0 0 24px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <MessageSquare size={18} color="#00D5B0" /> Comments <span style={{ color: '#B1B4BA', fontWeight: 400 }}>({comments.length})</span>
             </h3>
 
-            <div className="space-y-4 mb-5">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
               {comments.length === 0 ? (
-                <p className="text-gray-500 text-sm">No comments yet. Be the first!</p>
+                <p style={{ color: '#B1B4BA', fontSize: 14, margin: 0 }}>No comments yet. Be the first!</p>
               ) : (
                 comments.map((c) => (
-                  <div key={c._id} className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                      {c.author?.name?.charAt(0).toUpperCase()}
+                  <div key={c._id} style={{ display: 'flex', gap: 16 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #2B8CDC 0%, #1a5c96 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F2F4F7', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
+                      {c.author?.name ? c.author.name.charAt(0).toUpperCase() : '?'}
                     </div>
-                    <div className="flex-1 bg-gray-800/50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium text-white">{c.author?.name}</span>
-                        <span className="text-xs text-gray-500">
-                          {formatDistanceToNow(new Date(c.createdAt), { addSuffix: true })}
-                        </span>
+                    <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: '#F2F4F7' }}>{c.author?.name}</span>
+                        <span style={{ fontSize: 12, color: '#B1B4BA' }}>{formatDistanceToNow(new Date(c.createdAt), { addSuffix: true })}</span>
                       </div>
-                      <p className="text-sm text-gray-300 whitespace-pre-wrap">{c.text}</p>
+                      <p style={{ margin: 0, fontSize: 14, color: '#F2F4F7', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{c.text}</p>
                     </div>
                   </div>
                 ))
               )}
             </div>
 
-            <form onSubmit={handleComment} className="flex gap-2">
-              <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                {user?.name?.charAt(0).toUpperCase()}
+            <form onSubmit={handleComment} style={{ display: 'flex', gap: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #2B8CDC 0%, #1a5c96 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F2F4F7', fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
+                {user?.name ? user.name.charAt(0).toUpperCase() : '?'}
               </div>
-              <div className="flex-1 relative">
+              <div style={{ flex: 1, position: 'relative' }}>
                 <input value={commentText} onChange={(e) => setCommentText(e.target.value)}
-                  className="input pr-10" placeholder="Add a comment…" />
-                <button type="submit" disabled={submittingComment || !commentText.trim()}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-primary-400 hover:text-primary-300 disabled:opacity-30">
-                  <Send className="w-4 h-4" />
+                  className="input" style={{ paddingRight: 44, height: 40 }} placeholder="Add a comment…" />
+                <button type="submit" disabled={submittingComment || !commentText.trim()} style={{
+                  position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+                  background: 'transparent', border: 'none', cursor: submittingComment || !commentText.trim() ? 'not-allowed' : 'pointer',
+                  color: submittingComment || !commentText.trim() ? '#B1B4BA' : '#00D5B0', display: 'flex', alignItems: 'center', padding: 4
+                }}>
+                  <Send size={18} />
                 </button>
               </div>
             </form>
           </div>
         </div>
 
-        {/* Sidebar details */}
-        <div className="space-y-4">
-          <div className="card p-4 space-y-4">
-            <h3 className="text-sm font-semibold text-white mb-2">Details</h3>
+        {/* Sidebar Details */}
+        <div className="card stagger-3" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: '#F2F4F7', margin: 0 }}>Details</h3>
 
-            <div className="flex items-center gap-2">
-              <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
-              <div>
-                <p className="text-xs text-gray-500">Assigned to</p>
-                {task.assignedTo ? (
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <div className="w-5 h-5 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs">
-                      {task.assignedTo.name?.charAt(0).toUpperCase()}
-                    </div>
-                    <span className="text-sm text-gray-200">{task.assignedTo.name}</span>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <User size={18} color="#B1B4BA" style={{ flexShrink: 0, marginTop: 2 }} />
+            <div>
+              <p style={{ fontSize: 12, color: '#B1B4BA', margin: '0 0 4px 0' }}>Assigned to</p>
+              {task.assignedTo ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'linear-gradient(135deg, #2B8CDC 0%, #1a5c96 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F2F4F7', fontSize: 10, fontWeight: 700 }}>
+                    {task.assignedTo?.name ? task.assignedTo.name.charAt(0).toUpperCase() : '?'}
                   </div>
-                ) : <p className="text-sm text-gray-400">Unassigned</p>}
-              </div>
+                  <span style={{ fontSize: 14, color: '#F2F4F7', fontWeight: 500 }}>{task.assignedTo.name}</span>
+                </div>
+              ) : <p style={{ fontSize: 14, color: '#B1B4BA', margin: 0 }}>Unassigned</p>}
             </div>
+          </div>
 
-            {task.dueDate && (
-              <div className="flex items-center gap-2">
-                <Calendar className={`w-4 h-4 flex-shrink-0 ${isOverdue ? 'text-red-400' : 'text-gray-500'}`} />
-                <div>
-                  <p className="text-xs text-gray-500">Due date</p>
-                  <p className={`text-sm ${isOverdue ? 'text-red-400 font-medium' : 'text-gray-200'}`}>
-                    {format(new Date(task.dueDate), 'MMM d, yyyy')}
-                    {isOverdue && ' (Overdue)'}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {task.completedAt && (
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-green-400 flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-gray-500">Completed</p>
-                  <p className="text-sm text-green-300">{format(new Date(task.completedAt), 'MMM d, yyyy')}</p>
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center gap-2">
-              <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
+          {task.dueDate && (
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Calendar size={18} color={isOverdue ? '#FF3F6D' : '#B1B4BA'} style={{ flexShrink: 0, marginTop: 2 }} />
               <div>
-                <p className="text-xs text-gray-500">Created by</p>
-                <p className="text-sm text-gray-200">{task.createdBy?.name}</p>
+                <p style={{ fontSize: 12, color: '#B1B4BA', margin: '0 0 4px 0' }}>Due date</p>
+                <p style={{ fontSize: 14, color: isOverdue ? '#FF3F6D' : '#F2F4F7', fontWeight: 500, margin: 0 }}>
+                  {format(new Date(task.dueDate), 'MMM d, yyyy')} {isOverdue && '(Overdue)'}
+                </p>
               </div>
             </div>
+          )}
 
-            <div className="pt-2 border-t border-gray-800">
-              <p className="text-xs text-gray-500">Created {formatDistanceToNow(new Date(task.createdAt), { addSuffix: true })}</p>
-              <p className="text-xs text-gray-500">Updated {formatDistanceToNow(new Date(task.updatedAt), { addSuffix: true })}</p>
+          {task.completedAt && (
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Clock size={18} color="#00D5B0" style={{ flexShrink: 0, marginTop: 2 }} />
+              <div>
+                <p style={{ fontSize: 12, color: '#B1B4BA', margin: '0 0 4px 0' }}>Completed</p>
+                <p style={{ fontSize: 14, color: '#00D5B0', fontWeight: 500, margin: 0 }}>{format(new Date(task.completedAt), 'MMM d, yyyy')}</p>
+              </div>
             </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 12 }}>
+            <User size={18} color="#B1B4BA" style={{ flexShrink: 0, marginTop: 2 }} />
+            <div>
+              <p style={{ fontSize: 12, color: '#B1B4BA', margin: '0 0 4px 0' }}>Created by</p>
+              <p style={{ fontSize: 14, color: '#F2F4F7', fontWeight: 500, margin: 0 }}>{task.createdBy?.name}</p>
+            </div>
+          </div>
+
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 16, marginTop: 4 }}>
+            <p style={{ fontSize: 12, color: '#B1B4BA', margin: '0 0 4px 0' }}>Created {formatDistanceToNow(new Date(task.createdAt), { addSuffix: true })}</p>
+            <p style={{ fontSize: 12, color: '#B1B4BA', margin: 0 }}>Updated {formatDistanceToNow(new Date(task.updatedAt), { addSuffix: true })}</p>
           </div>
         </div>
       </div>
 
       <Modal isOpen={showEdit} onClose={() => setShowEdit(false)} title="Edit Task" size="lg">
-        <TaskForm
-          projectId={task.project?._id}
-          members={members}
-          initialData={task}
-          onSubmit={handleUpdate}
-          onCancel={() => setShowEdit(false)}
-        />
+        <TaskForm projectId={task.project?._id} members={members} initialData={task} onSubmit={handleUpdate} onCancel={() => setShowEdit(false)} />
       </Modal>
     </div>
   );
