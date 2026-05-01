@@ -17,6 +17,9 @@ const app = express();
 // Connect Database
 connectDB();
 
+// Trust proxy for Render/Vercel to fix express-rate-limit X-Forwarded-For error
+app.set('trust proxy', 1);
+
 // Security headers
 app.use(helmet());
 
