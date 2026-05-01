@@ -20,10 +20,18 @@ connectDB();
 // Security headers
 app.use(helmet());
 
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+let corsOrigin = frontendUrl;
+try {
+  corsOrigin = new URL(frontendUrl).origin;
+} catch (e) {
+  // Fallback if parsing fails
+}
+
 // CORS
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: corsOrigin,
     credentials: true,
   })
 );
