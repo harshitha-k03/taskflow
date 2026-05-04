@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useSelector } from 'react-redux';
+import { useEffect } from 'react';
 
 import Layout from './components/Layout';
 import Login from './pages/Login';
@@ -13,6 +14,7 @@ import ProjectDetail from './pages/ProjectDetail';
 import TaskBoard from './pages/TaskBoard';
 import TaskDetail from './pages/TaskDetail';
 import Profile from './pages/Profile';
+import Team from './pages/Team';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useSelector((s) => s.auth);
@@ -25,6 +27,16 @@ const PublicRoute = ({ children }) => {
 };
 
 export default function App() {
+  const { mode } = useSelector((s) => s.theme);
+
+  useEffect(() => {
+    if (mode === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [mode]);
+
   return (
     <BrowserRouter>
       <Toaster
@@ -53,6 +65,7 @@ export default function App() {
           <Route path="/projects/:id/board" element={<TaskBoard />} />
           <Route path="/tasks/:id" element={<TaskDetail />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/team" element={<Team />} />
         </Route>
 
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

@@ -1,7 +1,67 @@
 const crypto = require('crypto');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 const AppError = require('../utils/errors');
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('../utils/jwt');
+
+const DEMO_EMAIL = 'demo@taskflow.com';
+
+// Fresh demo notifications recreated on every login
+const resetDemoNotifications = async (userId) => {
+  await Notification.deleteMany({ user: userId });
+  const now = new Date();
+  const daysAgo  = (n) => new Date(now - n * 86400000);
+  await Notification.insertMany([
+    {
+      user: userId, type: 'task_assigned', read: false,
+      title: 'New Task Assigned to You',
+      message: 'Alex Rivera assigned you "Redesign Dashboard with smart widgets" — due today!',
+      createdAt: daysAgo(0),
+    },
+    {
+      user: userId, type: 'task_overdue', read: false,
+      title: '🔴 Task Overdue',
+      message: '"Fix mobile navigation overflow" was due 2 days ago and is still open.',
+      createdAt: daysAgo(0),
+    },
+    {
+      user: userId, type: 'task_overdue', read: false,
+      title: '🔴 Task Overdue',
+      message: '"Setup Meta & Google tracking pixels" is 1 day overdue. Immediate action needed.',
+      createdAt: daysAgo(1),
+    },
+    {
+      user: userId, type: 'member_added', read: false,
+      title: 'Added to Backend API v3',
+      message: 'Sarah Chen added you as Admin to "Backend API v3".',
+      createdAt: daysAgo(2),
+    },
+    {
+      user: userId, type: 'task_due_soon', read: false,
+      title: '⏰ Due Tomorrow',
+      message: '"Update Navbar with notifications" is due tomorrow. Mark it done if complete!',
+      createdAt: daysAgo(1),
+    },
+    {
+      user: userId, type: 'task_assigned', read: true,
+      title: 'Task Assigned to You',
+      message: 'Mike Johnson assigned you "Add WebSocket real-time notifications" in Backend API v3.',
+      createdAt: daysAgo(3),
+    },
+    {
+      user: userId, type: 'member_added', read: true,
+      title: 'Added to Q3 Marketing Campaign',
+      message: 'Priya Sharma added you to "Q3 Marketing Campaign" as Admin.',
+      createdAt: daysAgo(5),
+    },
+    {
+      user: userId, type: 'task_due_soon', read: true,
+      title: '⏰ Deadline This Week',
+      message: '"Rate limiting & DDoS protection" is due in 3 days. Keep it moving!',
+      createdAt: daysAgo(2),
+    },
+  ]);
+};
 
 // Helper to send tokens
 const sendTokens = (user, statusCode, res) => {
@@ -76,6 +136,11 @@ exports.login = async (req, res, next) => {
       $set: { loginAttempts: 0, lastLogin: new Date() },
       $unset: { lockUntil: 1 },
     });
+
+    // Demo user: always reset notifications so they appear fresh
+    if (user.email === DEMO_EMAIL) {
+      resetDemoNotifications(user._id).catch(() => {}); // fire-and-forget
+    }
 
     sendTokens(user, 200, res);
   } catch (err) {

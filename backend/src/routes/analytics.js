@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { getDashboard } = require('../controllers/analyticsController');
+const { getDashboard, getTeamOverview } = require('../controllers/analyticsController');
 const { protect } = require('../middleware/auth');
 
 router.use(protect);
 router.get('/dashboard', getDashboard);
+router.get('/team-overview', getTeamOverview);
 
 module.exports = router;

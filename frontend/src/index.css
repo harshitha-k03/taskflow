@@ -7,59 +7,90 @@
   html {
     scroll-behavior: smooth;
   }
+
+  /* ── LIGHT MODE: crisp white with blue-tinted slate backgrounds ── */
   body {
-    @apply bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-50 font-sans transition-colors duration-200;
+    @apply bg-slate-50 text-slate-900 font-sans transition-colors duration-300;
+  }
+
+  /* ── DARK MODE: deep navy/slate, NOT just gray ── */
+  html.dark body {
+    @apply bg-neutral-950 text-slate-100;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply px-md py-sm bg-primary-500 text-white font-semibold rounded-md hover:bg-primary-600 active:scale-95 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2;
+    @apply px-md py-sm bg-primary-500 text-white font-semibold rounded-md hover:bg-primary-600 active:scale-95 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm;
   }
 
   .btn-secondary {
-    @apply px-md py-sm bg-neutral-100 dark:bg-neutral-800 text-primary-600 dark:text-primary-400 font-semibold border border-primary-300 dark:border-primary-700 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 active:scale-95 transition-all duration-150 flex items-center justify-center gap-2;
+    @apply px-md py-sm bg-white dark:bg-neutral-800 text-primary-600 dark:text-primary-400 font-semibold border border-primary-200 dark:border-neutral-700 rounded-md hover:bg-primary-50 dark:hover:bg-neutral-700 active:scale-95 transition-all duration-150 flex items-center justify-center gap-2;
   }
 
   .btn-danger {
     @apply px-md py-sm bg-error-500 text-white font-semibold rounded-md hover:bg-error-600 active:scale-95 transition-all duration-150 flex items-center justify-center gap-2;
   }
 
+  /* Light: white card on slate-50 bg = clear separation. Dark: deep navy panel */
   .card {
-    @apply bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-lg shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200;
+    @apply bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl p-lg shadow-sm hover:shadow-md transition-all duration-200;
   }
 
   .card-flat {
-    @apply bg-neutral-50 dark:bg-neutral-950 rounded-lg p-md;
+    @apply bg-slate-50 dark:bg-neutral-900/60 rounded-lg p-md border border-slate-100 dark:border-neutral-800;
   }
 
   .input {
-    @apply w-full px-sm py-3 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-50 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900/20 transition-all duration-150;
+    @apply w-full px-sm py-3 border border-slate-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900/30 transition-all duration-150;
   }
 
   .label {
-    @apply text-label text-neutral-700 dark:text-neutral-300 font-semibold mb-1;
+    @apply text-label text-slate-700 dark:text-slate-300 font-semibold mb-1;
   }
 
   .badge {
     @apply px-2 py-1 text-label font-semibold rounded-sm inline-flex items-center gap-1;
+  }
+
+  /* Page section heading that works in both modes */
+  .section-heading {
+    @apply text-h3 font-bold text-slate-900 dark:text-slate-50;
   }
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { @apply bg-transparent; }
-::-webkit-scrollbar-thumb { @apply bg-neutral-200 dark:bg-neutral-700 rounded-full; }
-::-webkit-scrollbar-thumb:hover { @apply bg-neutral-300 dark:bg-neutral-600; }
+::-webkit-scrollbar-thumb { @apply bg-slate-300 dark:bg-neutral-700 rounded-full; }
+::-webkit-scrollbar-thumb:hover { @apply bg-slate-400 dark:bg-neutral-600; }
 
 /* Animations */
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from { opacity: 0; transform: scale(0.95) translateY(4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .animate-scale-in {
   animation: scaleIn 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-slide-down {
+  animation: slideDown 200ms ease-out;
+}
+
+.animate-fade-in {
+  animation: fadeIn 300ms ease-out;
 }
 
 .page-enter {

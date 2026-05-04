@@ -1,19 +1,17 @@
 import { Outlet } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import Sidebar from './Common/Sidebar';
 import Navbar from './Common/Navbar';
 
 export default function Layout() {
+  const { mode } = useSelector((s) => s.theme);
+
   return (
-    <div style={{
-      display: 'flex',
-      height: '100vh',
-      overflow: 'hidden',
-      background: 'linear-gradient(180deg, #0D1421 0%, #152036 100%)',
-    }}>
+    <div className={`flex h-screen overflow-hidden ${mode === 'dark' ? 'bg-neutral-950' : 'bg-slate-50'}`}>
       <Sidebar />
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+      <div className="flex flex-col flex-1 overflow-hidden">
         <Navbar />
-        <main style={{ flex: 1, overflowY: 'auto', padding: '24px' }} className="animate-fade-in">
+        <main className={`flex-1 overflow-y-auto p-6 animate-fade-in ${mode === 'dark' ? 'bg-neutral-950' : 'bg-slate-50'}`}>
           <Outlet />
         </main>
       </div>

@@ -2,6 +2,7 @@ const Task = require('../models/Task');
 const TeamMember = require('../models/TeamMember');
 const Comment = require('../models/Comment');
 const AppError = require('../utils/errors');
+const { createNotification } = require('./notificationController');
 
 // POST /api/tasks
 exports.createTask = async (req, res, next) => {
@@ -38,6 +39,17 @@ exports.createTask = async (req, res, next) => {
       { path: 'assignedTo', select: 'name email avatar' },
       { path: 'createdBy', select: 'name email avatar' },
     ]);
+
+    // Notify assignee if different from creator
+    if (assignedTo && String(assignedTo) !== String(req.user._id)) {
+      await createNotification({
+        userId: assignedTo,
+        type: 'task_assigned',
+        title: 'New Task Assigned',
+        message: `${req.user.name} assigned you "${task.title}"`,
+        link: `/tasks/${task._id}`,
+      });
+    }
 
     res.status(201).json({ success: true, task });
   } catch (err) {
@@ -202,6 +214,17 @@ exports.assignTask = async (req, res, next) => {
     task.assignedTo = assignedTo || null;
     await task.save();
     await task.populate('assignedTo', 'name email avatar');
+
+    // Notify new assignee
+    if (assignedTo && String(assignedTo) !== String(req.user._id)) {
+      await createNotification({
+        userId: assignedTo,
+        type: 'task_assigned',
+        title: 'Task Assigned to You',
+        message: `${req.user.name} assigned you "${task.title}"`,
+        link: `/tasks/${task._id}`,
+      });
+    }
 
     res.json({ success: true, task });
   } catch (err) {

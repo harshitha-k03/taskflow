@@ -3,6 +3,7 @@ const TeamMember = require('../models/TeamMember');
 const Task = require('../models/Task');
 const User = require('../models/User');
 const AppError = require('../utils/errors');
+const { createNotification } = require('./notificationController');
 
 // POST /api/projects
 exports.createProject = async (req, res, next) => {
@@ -169,6 +170,17 @@ exports.addMember = async (req, res, next) => {
     });
 
     await member.populate('user', 'name email avatar');
+
+    // Notify added member
+    const project = await Project.findById(req.params.id).select('name');
+    await createNotification({
+      userId: user._id,
+      type: 'member_added',
+      title: 'Added to a Project',
+      message: `${req.user.name} added you to "${project?.name || 'a project'}" as ${role}`,
+      link: `/projects/${req.params.id}`,
+    });
+
     res.status(201).json({ success: true, member });
   } catch (err) {
     next(err);

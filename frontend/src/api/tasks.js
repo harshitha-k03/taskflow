@@ -11,3 +11,6 @@ export const updateTaskStatus = (id, status) => api.patch(`/tasks/${id}/status`,
 export const assignTask = (id, assignedTo) => api.patch(`/tasks/${id}/assign`, { assignedTo });
 export const addComment = (id, text) => api.post(`/tasks/${id}/comments`, { text });
 export const getDashboard = () => api.get('/analytics/dashboard');
+export const getTeamOverview = () => api.get('/analytics/team-overview');
+export const updateAvailability = (status) => api.patch('/users/availability', { status });
+

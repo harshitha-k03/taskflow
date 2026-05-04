@@ -57,6 +57,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    availability: {
+      status: {
+        type: String,
+        enum: ['available', 'busy', 'ooo'],
+        default: 'available',
+      },
+      updatedAt: { type: Date, default: Date.now },
+    },
   },
   { timestamps: true }
 );

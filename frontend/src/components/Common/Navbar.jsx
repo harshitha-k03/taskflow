@@ -1,134 +1,303 @@
-import { useLocation, Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import toast from 'react-hot-toast';
-import { Bell, Search, Sun, Moon } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { Bell, Search, Sun, Moon, Check, X } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { toggleTheme } from '../../store/themeSlice';
+import {
+  setNotifications,
+  markOneRead as markOneReadAction,
+  markAllRead as markAllReadAction,
+} from '../../store/notificationSlice';
+import * as notifApi from '../../api/notifications';
+import api from '../../api/client';
+import { formatDistanceToNow } from 'date-fns';
 
 const titles = {
   '/dashboard': 'Dashboard',
   '/projects': 'Projects',
   '/profile': 'Profile',
   '/tasks': 'Task Details',
+  '/team': 'Team',
+};
+
+const TYPE_ICONS = {
+  task_assigned: '📋',
+  member_added: '👥',
+  task_due_soon: '⏰',
+  task_overdue: '🔴',
+  default: '🔔',
 };
 
 export default function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { user } = useSelector((s) => s.auth);
-  const [isDark, setIsDark] = useState(true);
+  const { mode } = useSelector((s) => s.theme);
+  const { items: notifications, unreadCount } = useSelector((s) => s.notifications);
+
   const [showNotifications, setShowNotifications] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: 'New Task Assigned', desc: 'You were assigned to "Update UI Components"', time: '2m ago', unread: true },
-    { id: 2, title: 'Project Update', desc: 'Frontend Revamp status changed to In Progress', time: '1h ago', unread: true },
-    { id: 3, title: 'Mention', desc: 'Alex mentioned you in a comment', time: '3h ago', unread: false },
-  ]);
+  const panelRef = useRef(null);
+  const searchRef = useRef(null);
+  const searchTimeout = useRef(null);
 
-  const unreadCount = notifications.filter(n => n.unread).length;
+  const isDark = mode === 'dark';
 
-  const markAllRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, unread: false })));
-  };
-
-  const markAsRead = (id) => {
-    setNotifications(notifications.map(n => n.id === id ? { ...n, unread: false } : n));
-  };
+  // Fetch notifications — runs on mount AND every 30 s (real-time bell update)
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const r = await notifApi.getNotifications();
+      dispatch(setNotifications(r.data.data));
+    } catch (_) {}
+  }, [dispatch]);
 
   useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDark]);
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000); // poll every 30 s
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
+
+  // Close notification panel on outside click
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (panelRef.current && !panelRef.current.contains(e.target)) {
+        setShowNotifications(false);
+      }
+    };
+    if (showNotifications) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showNotifications]);
+
+  // Close search on outside click
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowSearch(false);
+        setSearchQuery('');
+        setSearchResults([]);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  // Debounced search
+  const handleSearch = useCallback((q) => {
+    setSearchQuery(q);
+    clearTimeout(searchTimeout.current);
+    if (!q.trim()) { setSearchResults([]); setSearchLoading(false); return; }
+    setSearchLoading(true);
+    searchTimeout.current = setTimeout(async () => {
+      try {
+        const [tasks, projects] = await Promise.all([
+          api.get('/tasks', { params: { search: q, limit: 5 } }),
+          api.get('/projects', { params: { search: q } }),
+        ]);
+        const taskResults = (tasks.data.tasks || []).map((t) => ({
+          id: t._id, type: 'task', label: t.title,
+          sub: t.project?.name || 'Task',
+          href: `/projects/${t.project?._id || t.project}/board`,
+        }));
+        const projectResults = (projects.data.projects || [])
+          .filter((p) => p.name.toLowerCase().includes(q.toLowerCase()))
+          .slice(0, 3)
+          .map((p) => ({
+            id: p._id, type: 'project', label: p.name,
+            sub: `${p.taskCount || 0} tasks`,
+            href: `/projects/${p._id}`,
+          }));
+        setSearchResults([...projectResults, ...taskResults]);
+      } catch (_) {}
+      finally { setSearchLoading(false); }
+    }, 350);
+  }, []);
+
+  const handleMarkOne = async (id) => {
+    dispatch(markOneReadAction(id));
+    try { await notifApi.markOneRead(id); } catch (_) {}
+  };
+
+  const handleMarkAll = async () => {
+    dispatch(markAllReadAction());
+    try { await notifApi.markAllRead(); } catch (_) {}
+  };
 
   const title = Object.entries(titles).find(([p]) => location.pathname.startsWith(p))?.[1] || 'TaskFlow';
   const initial = user?.name ? user.name.charAt(0).toUpperCase() : '?';
 
+  // Theme-aware class helpers
+  const navBg = isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-slate-200';
+  const inputBg = isDark ? 'bg-neutral-800 border-neutral-700 text-white placeholder-neutral-500' : 'bg-slate-100 border-slate-200 text-slate-900 placeholder-slate-400';
+  const iconBtn = isDark
+    ? 'hover:bg-neutral-800 text-neutral-400 hover:text-neutral-200'
+    : 'hover:bg-slate-100 text-slate-500 hover:text-slate-800';
+  const dropdownBg = isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-slate-200';
+
   return (
-    <header className="h-16 flex-shrink-0 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between px-xl sticky top-0 z-20">
+    <header className={`h-16 flex-shrink-0 border-b flex items-center justify-between px-xl sticky top-0 z-20 ${navBg}`}>
       <div className="flex items-center gap-lg">
-        <h1 className="text-h3 font-bold text-neutral-900 dark:text-neutral-50 tracking-tight">
+        <h1 className={`text-h3 font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
           {title}
         </h1>
       </div>
 
-      <div className="flex items-center gap-md">
-        {/* Search - Desktop only */}
-        <div className="hidden md:flex items-center bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md px-3 py-1.5 focus-within:ring-2 focus-within:ring-primary-500/20 transition-all w-64">
-          <Search size={16} className="text-neutral-400 mr-2" />
-          <input 
-            type="text" 
-            placeholder="Search everything..." 
-            className="bg-transparent border-none outline-none text-body-sm w-full placeholder:text-neutral-500"
-          />
+      <div className="flex items-center gap-3">
+
+        {/* ── Search ── */}
+        <div className="relative" ref={searchRef}>
+          <div className={`hidden md:flex items-center border rounded-lg px-3 py-1.5 transition-all w-56 focus-within:w-72 focus-within:ring-2 focus-within:ring-primary-500/30 ${inputBg}`}>
+            <Search size={15} className={`mr-2 shrink-0 ${isDark ? 'text-neutral-500' : 'text-slate-400'}`} />
+            <input
+              type="text"
+              placeholder="Search tasks & projects..."
+              value={searchQuery}
+              onChange={(e) => { handleSearch(e.target.value); setShowSearch(true); }}
+              onFocus={() => setShowSearch(true)}
+              className="bg-transparent border-none outline-none text-body-sm w-full"
+            />
+            {searchQuery && (
+              <button onClick={() => { setSearchQuery(''); setSearchResults([]); }} className="ml-1">
+                <X size={13} className={isDark ? 'text-neutral-500' : 'text-slate-400'} />
+              </button>
+            )}
+          </div>
+
+          {/* Search Results Dropdown */}
+          {showSearch && searchQuery && (
+            <div className={`absolute top-full mt-2 left-0 w-80 rounded-xl shadow-xl border z-50 overflow-hidden animate-scale-in ${dropdownBg}`}>
+              {searchLoading ? (
+                <div className={`p-4 text-center text-body-sm ${isDark ? 'text-neutral-400' : 'text-slate-500'}`}>Searching...</div>
+              ) : searchResults.length > 0 ? (
+                <div className="py-2">
+                  {searchResults.map((r) => (
+                    <button
+                      key={r.id}
+                      onClick={() => { navigate(r.href); setShowSearch(false); setSearchQuery(''); setSearchResults([]); }}
+                      className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${isDark ? 'hover:bg-neutral-800' : 'hover:bg-slate-50'}`}
+                    >
+                      <span className={`text-xs font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${r.type === 'project' ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}>
+                        {r.type}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-body-sm font-semibold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{r.label}</p>
+                        <p className={`text-xs truncate ${isDark ? 'text-neutral-500' : 'text-slate-400'}`}>{r.sub}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className={`p-4 text-center text-body-sm ${isDark ? 'text-neutral-500' : 'text-slate-400'}`}>
+                  No results for "{searchQuery}"
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Theme Toggle */}
-        <button 
-          onClick={() => setIsDark(!isDark)}
-          className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-all text-neutral-500 dark:text-neutral-400"
+        {/* ── Theme Toggle ── */}
+        <button
+          onClick={() => dispatch(toggleTheme())}
+          className={`p-2 rounded-lg transition-all ${iconBtn}`}
+          title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
           {isDark ? <Sun size={20} /> : <Moon size={20} />}
         </button>
 
-        {/* Notifications */}
-        <div className="relative">
-          <button 
-            onClick={() => setShowNotifications(!showNotifications)}
-            className={`p-2 rounded-md transition-all relative ${showNotifications ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 dark:text-neutral-400'}`}
+        {/* ── Notifications ── */}
+        <div className="relative" ref={panelRef}>
+          <button
+            onClick={() => {
+              const next = !showNotifications;
+              setShowNotifications(next);
+              if (next) fetchNotifications(); // instant refresh on open
+            }}
+            className={`p-2 rounded-lg transition-all relative ${showNotifications
+              ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400'
+              : iconBtn}`}
           >
             <Bell size={20} />
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error-500 rounded-full border-2 border-white dark:border-neutral-900"></span>
+              <span className="absolute top-1 right-1 min-w-[17px] h-[17px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 border-2 border-white dark:border-neutral-900">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
             )}
           </button>
 
           {showNotifications && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowNotifications(false)} />
-              <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-neutral-900 rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden z-20 animate-scale-in">
-                <div className="p-4 border-b border-neutral-100 dark:border-neutral-800 flex justify-between items-center bg-neutral-50 dark:bg-neutral-900/50">
-                  <h3 className="font-bold text-neutral-900 dark:text-neutral-50 text-body-sm">Notifications</h3>
+            <div className={`absolute right-0 top-full mt-2 w-80 rounded-2xl shadow-2xl border overflow-hidden z-50 animate-scale-in ${dropdownBg}`}>
+              {/* Header */}
+              <div className={`p-4 border-b flex justify-between items-center ${isDark ? 'border-neutral-800 bg-neutral-900/80' : 'border-slate-100 bg-slate-50'}`}>
+                <div className="flex items-center gap-2">
+                  <h3 className={`font-bold text-body-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Notifications</h3>
                   {unreadCount > 0 && (
-                    <button onClick={markAllRead} className="text-[10px] font-bold text-primary-600 dark:text-primary-400 hover:underline uppercase tracking-wider">
-                      Mark all read
-                    </button>
+                    <span className="text-[10px] font-bold bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 px-2 py-0.5 rounded-full">
+                      {unreadCount} new
+                    </span>
                   )}
                 </div>
-                <div className="max-h-[350px] overflow-y-auto flex flex-col">
-                  {notifications.map(n => (
-                    <div 
-                      key={n.id} 
-                      onClick={() => markAsRead(n.id)}
-                      className={`p-4 border-b border-neutral-50 dark:border-neutral-800/50 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors cursor-pointer flex gap-3 ${n.unread ? 'bg-primary-50/30 dark:bg-primary-900/10' : ''}`}
-                    >
-                      <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${n.unread ? 'bg-primary-500' : 'bg-transparent'}`} />
-                      <div>
-                        <p className="text-body-sm font-bold text-neutral-900 dark:text-neutral-100 leading-tight mb-1">{n.title}</p>
-                        <p className="text-xs text-neutral-500 mb-2">{n.desc}</p>
-                        <p className="text-[10px] font-bold text-neutral-400 uppercase">{n.time}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="p-3 text-center border-t border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
-                  <button onClick={() => setShowNotifications(false)} className="text-xs font-bold text-neutral-500 hover:text-primary-600 transition-colors">Close Activity</button>
-                </div>
+                {unreadCount > 0 && (
+                  <button onClick={handleMarkAll} className="flex items-center gap-1 text-[10px] font-bold text-primary-600 dark:text-primary-400 hover:underline uppercase tracking-wider">
+                    <Check size={11} /> All read
+                  </button>
+                )}
               </div>
-            </>
+
+              {/* List */}
+              <div className={`max-h-[360px] overflow-y-auto flex flex-col divide-y ${isDark ? 'divide-neutral-800/50' : 'divide-slate-50'}`}>
+                {notifications.length === 0 ? (
+                  <div className="py-12 flex flex-col items-center justify-center text-center px-4">
+                    <Bell size={32} className={`mb-3 ${isDark ? 'text-neutral-700' : 'text-slate-200'}`} />
+                    <p className={`text-body-sm font-bold ${isDark ? 'text-neutral-500' : 'text-slate-400'}`}>You're all caught up!</p>
+                    <p className={`text-xs mt-1 ${isDark ? 'text-neutral-600' : 'text-slate-300'}`}>No new notifications right now.</p>
+                  </div>
+                ) : (
+                  notifications.map((n) => (
+                    <div
+                      key={n._id}
+                      onClick={() => handleMarkOne(n._id)}
+                      className={`p-4 transition-colors cursor-pointer flex gap-3 ${!n.read
+                        ? isDark ? 'bg-primary-900/10' : 'bg-primary-50/50'
+                        : ''} ${isDark ? 'hover:bg-neutral-800/50' : 'hover:bg-slate-50'}`}
+                    >
+                      <div className="text-xl shrink-0 mt-0.5">{TYPE_ICONS[n.type] || TYPE_ICONS.default}</div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-body-sm font-bold leading-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{n.title}</p>
+                        <p className={`text-xs mt-0.5 leading-relaxed ${isDark ? 'text-neutral-400' : 'text-slate-500'}`}>{n.message}</p>
+                        <p className={`text-[10px] font-semibold uppercase mt-1.5 tracking-wider ${isDark ? 'text-neutral-600' : 'text-slate-300'}`}>
+                          {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
+                        </p>
+                      </div>
+                      {!n.read && <div className="w-2 h-2 rounded-full bg-primary-500 shrink-0 mt-2" />}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className={`p-3 text-center border-t ${isDark ? 'border-neutral-800 bg-neutral-900/80' : 'border-slate-100 bg-slate-50'}`}>
+                <button onClick={() => setShowNotifications(false)} className={`text-xs font-bold transition-colors ${isDark ? 'text-neutral-500 hover:text-primary-400' : 'text-slate-400 hover:text-primary-600'}`}>
+                  Close
+                </button>
+              </div>
+            </div>
           )}
         </div>
 
-        <div className="h-8 w-[1px] bg-neutral-200 dark:bg-neutral-800 mx-2"></div>
+        <div className={`h-8 w-[1px] mx-1 ${isDark ? 'bg-neutral-800' : 'bg-slate-200'}`} />
 
-        {/* User Info */}
+        {/* ── User ── */}
         <Link to="/profile" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-sm font-bold shadow-sm group-hover:ring-2 group-hover:ring-primary-500/50 transition-all">
-            {initial}
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-sm font-bold shadow-sm group-hover:ring-2 group-hover:ring-primary-500/50 transition-all overflow-hidden">
+            {user?.avatar ? <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" /> : initial}
           </div>
           <div className="hidden lg:block text-left">
-            <p className="text-body-sm font-bold text-neutral-900 dark:text-neutral-50 leading-none">{user?.name}</p>
-            <p className="text-[10px] text-neutral-500 font-medium uppercase mt-1 tracking-wider">Member</p>
+            <p className={`text-body-sm font-bold leading-none ${isDark ? 'text-white' : 'text-slate-900'}`}>{user?.name}</p>
+            <p className={`text-[10px] font-medium uppercase mt-1 tracking-wider ${isDark ? 'text-neutral-500' : 'text-slate-400'}`}>Member</p>
           </div>
         </Link>
       </div>

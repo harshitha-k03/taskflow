@@ -10,6 +10,8 @@ const authRoutes = require('./routes/auth');
 const projectRoutes = require('./routes/projects');
 const taskRoutes = require('./routes/tasks');
 const analyticsRoutes = require('./routes/analytics');
+const notificationRoutes = require('./routes/notifications');
+const userRoutes = require('./routes/users');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -76,6 +78,8 @@ app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/users', userRoutes);
 
 // 404
 app.use((req, res) => {

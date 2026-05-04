@@ -147,3 +147,41 @@ exports.getProjectAnalytics = async (req, res, next) => {
     next(err);
   }
 };
+
+// GET /api/analytics/team-overview
+exports.getTeamOverview = async (req, res, next) => {
+  try {
+    const memberships = await TeamMember.find({ user: req.user._id }).select('project');
+    const projectIds = memberships.map((m) => m.project);
+
+    // All unique team members across user's projects
+    const allMembers = await TeamMember.find({ project: { $in: projectIds } })
+      .populate('user', 'name email avatar availability')
+      .lean();
+
+    const seen = new Set();
+    const uniqueMembers = allMembers
+      .filter((m) => {
+        if (!m.user || seen.has(String(m.user._id))) return false;
+        seen.add(String(m.user._id));
+        return true;
+      })
+      .map((m) => m.user);
+
+    // Open task count per member
+    const taskCounts = await Task.aggregate([
+      { $match: { project: { $in: projectIds }, status: { $ne: 'Done' }, assignedTo: { $ne: null } } },
+      { $group: { _id: '$assignedTo', count: { $sum: 1 } } },
+    ]);
+    const countMap = taskCounts.reduce((acc, t) => { acc[String(t._id)] = t.count; return acc; }, {});
+
+    const data = uniqueMembers.map((u) => ({
+      ...u,
+      openTasks: countMap[String(u._id)] || 0,
+    }));
+
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+};
