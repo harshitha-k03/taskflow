@@ -26,18 +26,23 @@ app.set('trust proxy', 1);
 // Security headers
 app.use(helmet());
 
-const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-let corsOrigin = frontendUrl;
-try {
-  corsOrigin = new URL(frontendUrl).origin;
-} catch (e) {
-  // Fallback if parsing fails
-}
+// Allowed frontend origins — add any new deployment URLs here
+const ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://taskflow-six-ashen.vercel.app',
+  process.env.FRONTEND_URL,
+].filter(Boolean).map((o) => { try { return new URL(o).origin; } catch { return o; } });
 
-// CORS
+// CORS — allow all known frontend origins
 app.use(
   cors({
-    origin: corsOrigin,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (Postman, mobile native, curl)
+      if (!origin) return callback(null, true);
+      if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS blocked: ${origin}`));
+    },
     credentials: true,
   })
 );
