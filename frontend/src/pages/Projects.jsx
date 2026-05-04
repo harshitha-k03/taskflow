@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Plus, Loader2, FolderKanban, Calendar, MoreVertical, Trash2, Edit, CheckSquare, ChevronRight, LayoutGrid } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { setProjects, addProject, removeProject, updateProject } from '../store/projectSlice';
 import * as projectApi from '../api/projects';
 import Modal from '../components/Common/Modal';

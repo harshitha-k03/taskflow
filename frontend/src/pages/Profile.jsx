@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-  User, Mail, Lock, Save, Loader2, Shield, Calendar, KeyRound, CheckCircle, AlertCircle,
+  User, Mail, Lock, Save, Loader2, Shield, Calendar, KeyRound,
+  CheckCircle, AlertCircle, Wifi, WifiOff, Coffee,
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { updateUser } from '../store/authSlice';
 import * as authApi from '../api/auth';
+import { updateAvailability } from '../api/tasks';
 
 export default function Profile() {
   const dispatch = useDispatch();
@@ -18,6 +20,29 @@ export default function Profile() {
   const [passLoading, setPassLoading] = useState(false);
   const [passError, setPassError] = useState('');
   const [passSuccess, setPassSuccess] = useState(false);
+  const [availability, setAvailability] = useState(user?.availability?.status || 'available');
+  const [availLoading, setAvailLoading] = useState(false);
+
+  const AVAIL_OPTIONS = [
+    { key: 'available', label: 'Available',     icon: Wifi,    bg: 'bg-emerald-500', ring: 'ring-emerald-400', light: 'bg-emerald-50 text-emerald-700 border-emerald-200', dark: 'dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800' },
+    { key: 'busy',      label: 'Busy',           icon: Coffee,  bg: 'bg-amber-500',   ring: 'ring-amber-400',   light: 'bg-amber-50 text-amber-700 border-amber-200',     dark: 'dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800'     },
+    { key: 'ooo',       label: 'Out of Office',  icon: WifiOff, bg: 'bg-red-500',     ring: 'ring-red-400',     light: 'bg-red-50 text-red-700 border-red-200',           dark: 'dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'           },
+  ];
+
+  const handleAvailability = async (status) => {
+    if (status === availability) return;
+    setAvailLoading(true);
+    try {
+      await updateAvailability(status);
+      setAvailability(status);
+      dispatch(updateUser({ ...user, availability: { status } }));
+      toast.success(`Status set to ${AVAIL_OPTIONS.find(o => o.key === status)?.label}!`);
+    } catch (err) {
+      toast.error('Failed to update status');
+    } finally {
+      setAvailLoading(false);
+    }
+  };
 
   if (!user) {
     return (
@@ -151,6 +176,47 @@ export default function Profile() {
             </button>
           </div>
         </form>
+      </div>
+
+      {/* ── Availability Status Card ── */}
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl p-xl shadow-sm">
+        <div className="flex items-center gap-3 mb-xl pb-lg border-b border-neutral-100 dark:border-neutral-800">
+          <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+            <Wifi size={20} className="text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <div>
+            <h2 className="text-h3 font-bold text-slate-900 dark:text-slate-50">Your Availability</h2>
+            <p className="text-body-sm text-slate-500">Let your team know if you're reachable</p>
+          </div>
+          {availLoading && <Loader2 size={16} className="ml-auto animate-spin text-slate-400" />}
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          {AVAIL_OPTIONS.map(({ key, label, icon: Icon, bg, ring, light, dark }) => {
+            const isActive = availability === key;
+            return (
+              <button
+                key={key}
+                onClick={() => handleAvailability(key)}
+                disabled={availLoading}
+                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 font-semibold text-body-sm transition-all duration-150 ${
+                  isActive
+                    ? `${light} ${dark} border-current ring-2 ${ring} ring-offset-2 ring-offset-white dark:ring-offset-neutral-900 scale-[1.02] shadow-md`
+                    : 'border-slate-200 dark:border-neutral-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-neutral-600 hover:bg-slate-50 dark:hover:bg-neutral-800/50'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sm ${isActive ? bg : 'bg-slate-200 dark:bg-neutral-700'}`}>
+                  <Icon size={18} />
+                </div>
+                <span>{label}</span>
+                {isActive && <div className="w-1.5 h-1.5 rounded-full bg-current" />}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-4 text-center">
+          Your status is visible to all team members on the Team page and Dashboard.
+        </p>
       </div>
 
       {/* Change Password Card */}

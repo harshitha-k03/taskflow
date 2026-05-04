@@ -27,12 +27,18 @@ const seedData = async () => {
       await TeamMember.deleteMany({ project: { $in: pIds } });
       await Project.deleteMany({ creator: demoUser._id });
       await Notification.deleteMany({ user: demoUser._id });
+      // Always ensure avatar is set
+      await User.findByIdAndUpdate(demoUser._id, {
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=DemoUser',
+        'availability.status': 'available',
+      });
     } else {
       console.log('👤 Creating demo user...');
       demoUser = await User.create({
         name: 'Demo User',
         email: 'demo@taskflow.com',
         password: 'password123',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=DemoUser',
         availability: { status: 'available' },
       });
     }

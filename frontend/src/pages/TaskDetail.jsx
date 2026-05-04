@@ -5,7 +5,7 @@ import {
   ArrowLeft, Edit, Trash2, Calendar, User, Flag, Clock,
   MessageSquare, Loader2, Send, Tag, ChevronRight, CheckCircle, Shield
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { updateTask, removeTask } from '../store/taskSlice';
 import { getTask, updateTask as updateTaskApi, deleteTask, addComment } from '../api/tasks';
 import * as projectApi from '../api/projects';

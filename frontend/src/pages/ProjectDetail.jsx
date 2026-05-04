@@ -5,7 +5,7 @@ import {
   ArrowLeft, Users, Kanban, Trash2, UserPlus, FolderKanban, TrendingUp,
   Crown, UserMinus, Edit, Loader2, CheckCircle, Clock, AlertCircle, ChevronRight, Mail, Shield
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import * as projectApi from '../api/projects';
 import { getProjectTasks } from '../api/tasks';
 import Modal from '../components/Common/Modal';

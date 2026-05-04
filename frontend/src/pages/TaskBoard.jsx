@@ -7,7 +7,7 @@ import {
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ArrowLeft, Plus, Loader2, GripVertical, Calendar, Search, CheckSquare } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { setTasks, addTask, updateTask } from '../store/taskSlice';
 import { getProjectTasks, updateTaskStatus, createTask } from '../api/tasks';
 import * as projectApi from '../api/projects';

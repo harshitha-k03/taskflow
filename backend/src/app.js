@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const passport = require('./config/passport');
 
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/auth');
@@ -67,6 +68,9 @@ app.use(globalLimiter);
 // Body parsing
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Passport (stateless — no sessions)
+app.use(passport.initialize());
 
 // Health check
 app.get('/health', (req, res) =>

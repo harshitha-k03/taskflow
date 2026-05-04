@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { Zap, Loader2, Eye, EyeOff } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { setCredentials } from '../store/authSlice';
 import * as authApi from '../api/auth';
 

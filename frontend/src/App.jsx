@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from 'sonner';
 import { useSelector } from 'react-redux';
 import { useEffect } from 'react';
 
@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import OAuthCallback from './pages/OAuthCallback';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
@@ -41,13 +42,16 @@ export default function App() {
     <BrowserRouter>
       <Toaster
         position="top-right"
+        richColors
+        closeButton
+        expand={false}
+        duration={4000}
         toastOptions={{
           style: {
-            background: '#1f2937',
-            color: '#f9fafb',
-            border: '1px solid #374151',
+            fontFamily: 'Inter, system-ui, sans-serif',
+            fontSize: '0.875rem',
+            fontWeight: '500',
           },
-          success: { iconTheme: { primary: '#6366f1', secondary: '#fff' } },
         }}
       />
       <Routes>
@@ -56,6 +60,8 @@ export default function App() {
         <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
         <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
         <Route path="/reset-password/:token" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+        {/* OAuth callback — always public, no guard */}
+        <Route path="/oauth-callback" element={<OAuthCallback />} />
 
         {/* Protected */}
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>

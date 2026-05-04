@@ -11,6 +11,7 @@ import {
 import * as notifApi from '../../api/notifications';
 import api from '../../api/client';
 import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
 
 const titles = {
   '/dashboard': 'Dashboard',
@@ -49,10 +50,24 @@ export default function Navbar() {
   const isDark = mode === 'dark';
 
   // Fetch notifications — runs on mount AND every 30 s (real-time bell update)
+  const hasToasted = useRef(false);
+
   const fetchNotifications = useCallback(async () => {
     try {
       const r = await notifApi.getNotifications();
       dispatch(setNotifications(r.data.data));
+
+      // Show login toast ONCE per session when there are unread notifications
+      if (!hasToasted.current) {
+        hasToasted.current = true;
+        const unread = r.data.data.filter((n) => !n.read).length;
+        if (unread > 0) {
+          toast.info(`You have ${unread} unread notification${unread > 1 ? 's' : ''}`, {
+            description: 'Click the bell icon to view them.',
+            duration: 4500,
+          });
+        }
+      }
     } catch (_) {}
   }, [dispatch]);
 
