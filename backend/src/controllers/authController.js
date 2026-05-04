@@ -25,7 +25,8 @@ const sendTokens = (user, statusCode, res) => {
 // POST /api/auth/signup
 exports.signup = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, password } = req.body;
+    const email = req.body.email?.trim().toLowerCase();
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -42,7 +43,8 @@ exports.signup = async (req, res, next) => {
 // POST /api/auth/login
 exports.login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { password } = req.body;
+    const email = req.body.email?.trim().toLowerCase();
 
     const user = await User.findOne({ email }).select(
       '+password +loginAttempts +lockUntil'
@@ -148,7 +150,7 @@ exports.changePassword = async (req, res, next) => {
 // POST /api/auth/forgot-password
 exports.forgotPassword = async (req, res, next) => {
   try {
-    const { email } = req.body;
+    const email = req.body.email?.trim().toLowerCase();
     const user = await User.findOne({ email });
 
     // Always respond OK to prevent email enumeration
