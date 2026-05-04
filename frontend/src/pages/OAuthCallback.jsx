@@ -1,19 +1,19 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '../store/authSlice';
 import { Loader2, CheckSquare } from 'lucide-react';
 import { toast } from 'sonner';
 
-/**
- * /oauth-callback — Google redirects here after auth.
- * Reads tokens + user from URL params, stores in Redux, then goes to /dashboard.
- */
 export default function OAuthCallback() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const hasRun = useRef(false); // prevents React Strict Mode double-fire
 
   useEffect(() => {
+    if (hasRun.current) return;
+    hasRun.current = true;
+
     const params = new URLSearchParams(window.location.search);
     const error = params.get('error');
 
@@ -42,7 +42,7 @@ export default function OAuthCallback() {
     dispatch(setCredentials({ accessToken, refreshToken, user }));
     toast.success(`Welcome, ${user.name}! 🎉`);
     navigate('/dashboard');
-  }, [dispatch, navigate]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-50 dark:bg-neutral-950 gap-4">
