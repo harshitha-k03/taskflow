@@ -82,6 +82,17 @@ app.get('/health', (req, res) =>
   res.json({ success: true, status: 'ok', env: process.env.NODE_ENV })
 );
 
+// Temporary debug endpoint — REMOVE after OAuth is working
+app.get('/debug-oauth', (req, res) =>
+  res.json({
+    BACKEND_URL:         process.env.BACKEND_URL || '❌ NOT SET',
+    FRONTEND_URL:        process.env.FRONTEND_URL || '❌ NOT SET',
+    GOOGLE_CLIENT_ID:    process.env.GOOGLE_CLIENT_ID ? `✅ set (${process.env.GOOGLE_CLIENT_ID.slice(0, 10)}...)` : '❌ NOT SET',
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ? '✅ set' : '❌ NOT SET',
+    callbackURL:         `${process.env.BACKEND_URL || 'http://localhost:5001'}/api/auth/google/callback`,
+  })
+);
+
 // Routes
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/projects', projectRoutes);
