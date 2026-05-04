@@ -1,21 +1,37 @@
-# 🚀 TaskFlow — Team Task Manager
+# 🚀 TaskFlow — Team Collaboration Suite
 
 > **Live Demo:** [https://taskflow-six-ashen.vercel.app](https://taskflow-six-ashen.vercel.app)  
 > **Backend API:** [https://taskflow-production-f643.up.railway.app](https://taskflow-production-f643.up.railway.app)
 
-A full-stack web application for project and task management with role-based access control, Kanban board, and analytics.
+A full-stack team collaboration platform with project management, real-time chat, Kanban boards, and analytics — built with the MERN stack.
 
 ---
 
 ## ✨ Features
 
-- ✅ **JWT Authentication** — Signup, login, refresh tokens, password reset
-- ✅ **Project Management** — Create, edit, archive projects with team invites
-- ✅ **Kanban Board** — Drag-and-drop task management (powered by dnd-kit)
+### Core
+- ✅ **Google OAuth + JWT Auth** — Sign in with Google or email/password, with refresh tokens and password reset
+- ✅ **Project Management** — Create, edit, archive projects with team invites and role management
+- ✅ **Kanban Board** — Drag-and-drop task management (powered by dnd-kit) with filters and search
 - ✅ **Role-Based Access** — Admin vs Member permissions enforced on all endpoints
-- ✅ **Task System** — Priority, status, due dates, labels, assignments, comments
-- ✅ **Dashboard Analytics** — Charts, completion rates, overdue alerts
-- ✅ **Rate Limiting** — 5 failed login attempts → 15-min lockout
+- ✅ **Task System** — Priority, status, due dates, labels, assignments, and threaded comments
+- ✅ **Dashboard Analytics** — Charts, completion rates, smart priority engine, overdue alerts
+
+### Real-Time Collaboration
+- ✅ **Live Chat** — Team channels + direct messages with Ably real-time transport
+- ✅ **Typing Indicators** — See when teammates are typing in real-time
+- ✅ **Presence & Status** — Available / Busy / Out of Office with live status broadcasting
+- ✅ **Message Notifications** — Sonner toast notifications for incoming messages with clickable actions
+- ✅ **Unread Badges** — Slack-style unread count badges on sidebar and chat tabs
+
+### Quality of Life
+- ✅ **⌘K Quick Search** — Global keyboard shortcut to search tasks & projects instantly
+- ✅ **Collapsible Sidebar** — Toggle to icon-only mode for more screen space (persisted in localStorage)
+- ✅ **Skeleton Loading** — Premium shimmer loading screens instead of plain spinners
+- ✅ **Project Progress Bars** — Visual completion tracking on each project card
+- ✅ **Avatar Management** — Google profile picture + preset avatar picker with Save/Cancel flow
+- ✅ **Password Visibility** — Eye/EyeOff toggles on all password fields
+- ✅ **Dark Mode** — Full dark mode support with smooth theme transitions
 - ✅ **Responsive Design** — Works on desktop and mobile
 
 ---
@@ -26,12 +42,14 @@ A full-stack web application for project and task management with role-based acc
 |-------|-----------|
 | **Backend** | Node.js, Express.js |
 | **Database** | MongoDB + Mongoose |
-| **Auth** | JWT (15m access + 7d refresh) + bcrypt |
+| **Auth** | JWT (15m access + 7d refresh) + bcrypt + Google OAuth 2.0 (Passport.js) |
+| **Real-Time** | Ably (chat, presence, notifications) |
 | **Frontend** | React 18 + Vite |
 | **State** | Redux Toolkit |
 | **Styling** | Tailwind CSS |
 | **Drag & Drop** | dnd-kit |
 | **Charts** | Recharts |
+| **Notifications** | Sonner (toast) |
 | **Deployment** | Railway (Backend) + Vercel (Frontend) |
 
 ---
@@ -41,6 +59,8 @@ A full-stack web application for project and task management with role-based acc
 ### Prerequisites
 - Node.js 18+
 - MongoDB (local or Atlas)
+- Google OAuth credentials (for Google login)
+- Ably API key (for real-time features)
 
 ### Backend
 
@@ -48,7 +68,8 @@ A full-stack web application for project and task management with role-based acc
 cd backend
 npm install
 cp .env.example .env
-# Edit .env — set MONGODB_URI, JWT_SECRET, REFRESH_TOKEN_SECRET
+# Edit .env — set MONGODB_URI, JWT_SECRET, REFRESH_TOKEN_SECRET,
+# GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, ABLY_API_KEY
 npm run dev
 ```
 
@@ -61,6 +82,7 @@ cd frontend
 npm install
 cp .env.example .env
 # VITE_API_URL=http://localhost:5000/api
+# VITE_ABLY_KEY=<your-ably-key>
 npm run dev
 ```
 
@@ -81,6 +103,8 @@ Frontend runs on `http://localhost:5173`
 | GET | `/api/auth/me` | Get current user |
 | PUT | `/api/auth/profile` | Update profile |
 | PUT | `/api/auth/change-password` | Change password |
+| GET | `/api/auth/google` | Google OAuth login |
+| GET | `/api/auth/google/callback` | Google OAuth callback |
 
 ### Projects
 | Method | Endpoint | Description |
@@ -94,6 +118,7 @@ Frontend runs on `http://localhost:5173`
 | POST | `/api/projects/:id/members` | Add member (Admin) |
 | DELETE | `/api/projects/:id/members/:uid` | Remove member (Admin) |
 | PUT | `/api/projects/:id/members/:uid` | Change role (Admin) |
+| GET | `/api/projects/:id/analytics` | Get project analytics |
 
 ### Tasks
 | Method | Endpoint | Description |
@@ -106,6 +131,28 @@ Frontend runs on `http://localhost:5173`
 | PATCH | `/api/tasks/:id/status` | Update status |
 | PATCH | `/api/tasks/:id/assign` | Reassign task |
 | POST | `/api/tasks/:id/comments` | Add comment |
+
+### Chat & Messages
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/messages/:channel` | Get messages for a channel |
+| POST | `/api/messages/:channel` | Send a message |
+| POST | `/api/messages/:channel/read` | Mark channel as read |
+| GET | `/api/messages/unread/counts` | Get unread counts for all channels |
+
+### Team & Users
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/users/team` | Get team overview with statuses |
+| GET | `/api/users/team/:id` | Get member detail |
+| PUT | `/api/users/availability` | Update own availability status |
+
+### Notifications
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/notifications` | Get notifications |
+| PATCH | `/api/notifications/:id/read` | Mark one notification read |
+| PATCH | `/api/notifications/read-all` | Mark all notifications read |
 
 ---
 
@@ -121,6 +168,7 @@ Frontend runs on `http://localhost:5173`
 | Edit Any Task | ✅ | ❌ |
 | Delete Task | ✅ | ❌ |
 | View Dashboard | ✅ | ✅ |
+| Chat (Team & DM) | ✅ | ✅ |
 
 ---
 
@@ -141,6 +189,10 @@ JWT_EXPIRE=15m
 REFRESH_TOKEN_SECRET=<random 64-char string>
 REFRESH_TOKEN_EXPIRE=7d
 FRONTEND_URL=https://taskflow-six-ashen.vercel.app
+GOOGLE_CLIENT_ID=<Google OAuth client ID>
+GOOGLE_CLIENT_SECRET=<Google OAuth client secret>
+BACKEND_URL=https://taskflow-production-f643.up.railway.app
+ABLY_API_KEY=<Ably API key>
 ```
 
 ### Frontend — Vercel
@@ -148,9 +200,10 @@ FRONTEND_URL=https://taskflow-six-ashen.vercel.app
 - **Build Command:** `npm run build`
 - **Output Directory:** `dist`
 
-Environment variable set on Vercel:
+Environment variables set on Vercel:
 ```
 VITE_API_URL=https://taskflow-production-f643.up.railway.app/api
+VITE_ABLY_KEY=<Ably publishable key>
 ```
 
 ---
@@ -161,20 +214,23 @@ VITE_API_URL=https://taskflow-production-f643.up.railway.app/api
 taskflow/
 ├── backend/
 │   ├── src/
-│   │   ├── config/       # database, jwt
-│   │   ├── controllers/  # auth, project, task, analytics
+│   │   ├── config/       # database, passport (Google OAuth)
+│   │   ├── controllers/  # auth, project, task, analytics, notification, message
 │   │   ├── middleware/   # auth, rbac, errorHandler
-│   │   ├── models/       # User, Project, Task, TeamMember, Comment
-│   │   ├── routes/       # auth, projects, tasks, analytics
-│   │   ├── utils/        # jwt, errors, validators
+│   │   ├── models/       # User, Project, Task, TeamMember, Comment, Message, Notification
+│   │   ├── routes/       # auth, projects, tasks, analytics, messages, notifications, users
+│   │   ├── utils/        # jwt, errors, validators, seedDemo
 │   │   └── app.js
 │   └── .env.example
 └── frontend/
     ├── src/
-    │   ├── api/          # axios clients
-    │   ├── components/   # Layout, Modal, TaskForm, ProjectForm, Sidebar
-    │   ├── pages/        # Dashboard, Projects, TaskBoard, TaskDetail, Profile
-    │   ├── store/        # Redux slices
+    │   ├── api/          # axios clients (auth, projects, tasks, messages, notifications)
+    │   ├── components/
+    │   │   ├── Common/   # Sidebar, Navbar, Modal, NotificationListener, SkeletonCard
+    │   │   ├── Projects/ # ProjectForm
+    │   │   └── Tasks/    # TaskForm
+    │   ├── pages/        # Dashboard, Projects, ProjectDetail, TaskBoard, TaskDetail, Chat, Team, Profile
+    │   ├── store/        # Redux slices (auth, theme, projects, tasks, notifications)
     │   ├── App.jsx
     │   └── main.jsx
     └── .env.example
@@ -186,12 +242,13 @@ taskflow/
 
 - Passwords hashed with **bcrypt** (10 salt rounds)
 - JWT tokens: 15-minute access + 7-day refresh
-- Rate limiting: 20 auth requests / 15 min window
+- Rate limiting: 50 auth requests / 15 min, 1000 global / 15 min
 - Account lockout after 5 failed logins (15 min)
 - Helmet.js security headers
 - CORS configured to frontend URL only
 - Input validation via Joi (server) on all endpoints
 - MongoDB injection prevention via Mongoose
+- Google OAuth 2.0 via Passport.js (no password stored for OAuth users)
 
 ---
 

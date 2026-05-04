@@ -198,11 +198,11 @@ export default function Navbar() {
             />
             {searchQuery ? (
               <button onClick={() => { setSearchQuery(''); setSearchResults([]); }} className="ml-1">
-                <X size={13} className={isDark ? 'text-neutral-500' : 'text-slate-400'} />
+                <X size={14} className={isDark ? 'text-neutral-500' : 'text-slate-400'} />
               </button>
             ) : (
-              <kbd className={`hidden lg:inline-flex items-center gap-0.5 ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold border shrink-0 ${isDark ? 'border-neutral-700 text-neutral-500 bg-neutral-800/50' : 'border-slate-300 text-slate-400 bg-white'}`}>
-                ⌘K
+              <kbd className={`hidden lg:inline-flex items-center gap-0.5 ml-1 px-2 py-0.5 rounded text-xs font-bold border shrink-0 tracking-widest ${isDark ? 'border-neutral-600 text-neutral-400 bg-neutral-800' : 'border-slate-300 text-slate-500 bg-slate-50'}`}>
+                {typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? '⌘K' : 'Ctrl K'}
               </kbd>
             )}
           </div>

@@ -89,9 +89,20 @@ exports.getTasks = async (req, res, next) => {
       Task.countDocuments(filter),
     ]);
 
+    const taskIds = tasks.map(t => t._id);
+    const commentCounts = await Comment.aggregate([
+      { $match: { task: { $in: taskIds } } },
+      { $group: { _id: '$task', count: { $sum: 1 } } }
+    ]);
+    const countMap = commentCounts.reduce((acc, c) => { acc[c._id] = c.count; return acc; }, {});
+    const tasksWithCounts = tasks.map(t => ({
+      ...t.toObject(),
+      commentCount: countMap[t._id] || 0
+    }));
+
     res.json({
       success: true,
-      tasks,
+      tasks: tasksWithCounts,
       pagination: { total, page: Number(page), limit: Number(limit), pages: Math.ceil(total / limit) },
     });
   } catch (err) {

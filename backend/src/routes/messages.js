@@ -20,8 +20,21 @@ router.use(protect);
 // GET /api/messages/unread/counts — unread counts per channel for current user
 router.get('/unread/counts', async (req, res, next) => {
   try {
+    const TeamMember = require('../models/TeamMember');
+    const myProjects = await TeamMember.find({ user: req.user._id }).select('project').lean();
+    const myTeamChannels = myProjects.map((p) => `team:${p.project}`);
+    const myDmRegex = new RegExp(`dm:.*${req.user._id.toString()}.*`);
+
     const counts = await Message.aggregate([
-      { $match: { readBy: { $ne: req.user._id } } },
+      { 
+        $match: { 
+          readBy: { $ne: req.user._id },
+          $or: [
+            { channel: { $in: myTeamChannels } },
+            { channel: myDmRegex }
+          ]
+        } 
+      },
       { $group: { _id: '$channel', count: { $sum: 1 } } },
     ]);
     const map = counts.reduce((acc, c) => { acc[c._id] = c.count; return acc; }, {});

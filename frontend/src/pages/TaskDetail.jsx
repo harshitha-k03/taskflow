@@ -86,6 +86,7 @@ export default function TaskDetail() {
       const res = await addComment(id, commentText.trim());
       setComments((c) => [...c, res.data.comment]);
       setCommentText('');
+      dispatch(updateTask({ _id: id, commentCount: comments.length + 1 }));
     } catch (err) {
       toast.error('Failed to post comment');
     } finally {
