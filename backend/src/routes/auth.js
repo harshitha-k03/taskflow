@@ -36,24 +36,41 @@ router.get(
 // Step 2: Google redirects back here
 router.get(
   '/google/callback',
-  passport.authenticate('google', { session: false, failureRedirect: `${process.env.FRONTEND_URL}/login?error=oauth_failed` }),
+  (req, res, next) => {
+    // Use custom callback so FRONTEND_URL is read at request time (not module-load time)
+    passport.authenticate('google', { session: false }, (err, user) => {
+      const frontend = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+      if (err) {
+        console.error('[OAuth] Callback error:', err.message);
+        return res.redirect(`${frontend}/login?error=oauth_failed`);
+      }
+      if (!user) {
+        console.error('[OAuth] No user returned from strategy');
+        return res.redirect(`${frontend}/login?error=oauth_failed`);
+      }
+
+      req.user = user;
+      next();
+    })(req, res, next);
+  },
   (req, res) => {
     const user = req.user;
+    const frontend = process.env.FRONTEND_URL || 'http://localhost:5173';
     const accessToken  = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
 
-    // Encode user info and tokens into redirect URL
     const params = new URLSearchParams({
       accessToken,
       refreshToken,
-      userId:    user._id.toString(),
-      name:      user.name,
-      email:     user.email,
-      avatar:    user.avatar || '',
+      userId:          user._id.toString(),
+      name:            user.name,
+      email:           user.email,
+      avatar:          user.avatar || '',
       isEmailVerified: String(user.isEmailVerified),
     });
 
-    res.redirect(`${process.env.FRONTEND_URL}/oauth-callback?${params.toString()}`);
+    res.redirect(`${frontend}/oauth-callback?${params.toString()}`);
   }
 );
 

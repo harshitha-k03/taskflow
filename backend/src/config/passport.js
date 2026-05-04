@@ -2,27 +2,33 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User');
 
+// Strip characters that fail the User model's name validator
+const sanitizeName = (raw = '') =>
+  raw.replace(/[^a-zA-Z\s.'-]/g, '').trim().slice(0, 50) || 'User';
+
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/auth/google/callback`,
+      // Read BACKEND_URL at request time via a function so env is always current
+      callbackURL: `${process.env.BACKEND_URL || 'http://localhost:5001'}/api/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
         const email = profile.emails?.[0]?.value?.toLowerCase();
-        if (!email) return done(new Error('No email from Google'), null);
+        if (!email) return done(new Error('No email returned from Google'), null);
 
-        // Check if user already exists (by googleId or email)
+        const name = sanitizeName(profile.displayName);
+
+        // 1. Returning Google user
         let user = await User.findOne({ googleId: profile.id });
 
         if (!user) {
-          // Try matching by email (user may have a local account)
+          // 2. Existing local account — link Google
           user = await User.findOne({ email });
 
           if (user) {
-            // Link Google to existing local account
             user.googleId = profile.id;
             user.authProvider = 'google';
             if (!user.avatar && profile.photos?.[0]?.value) {
@@ -30,14 +36,14 @@ passport.use(
             }
             await user.save({ validateBeforeSave: false });
           } else {
-            // Brand new user via Google
+            // 3. Brand new user via Google
             user = await User.create({
-              name: profile.displayName,
+              name,
               email,
               googleId: profile.id,
               authProvider: 'google',
               avatar: profile.photos?.[0]?.value || null,
-              isEmailVerified: true, // Google emails are verified
+              isEmailVerified: true,
               availability: { status: 'available' },
             });
           }
@@ -45,6 +51,7 @@ passport.use(
 
         return done(null, user);
       } catch (err) {
+        console.error('[OAuth] Strategy error:', err.message, err.errors || '');
         return done(err, null);
       }
     }
