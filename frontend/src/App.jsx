@@ -16,6 +16,7 @@ import TaskBoard from './pages/TaskBoard';
 import TaskDetail from './pages/TaskDetail';
 import Profile from './pages/Profile';
 import Team from './pages/Team';
+import Chat from './pages/Chat';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useSelector((s) => s.auth);
@@ -72,6 +73,7 @@ export default function App() {
           <Route path="/tasks/:id" element={<TaskDetail />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/team" element={<Team />} />
+          <Route path="/chat" element={<Chat />} />
         </Route>
 
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

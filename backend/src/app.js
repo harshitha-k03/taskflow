@@ -13,6 +13,7 @@ const taskRoutes = require('./routes/tasks');
 const analyticsRoutes = require('./routes/analytics');
 const notificationRoutes = require('./routes/notifications');
 const userRoutes = require('./routes/users');
+const messageRoutes = require('./routes/messages');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -55,7 +56,7 @@ if (process.env.NODE_ENV === 'development') {
 // Rate limiting — stricter on auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 50,
   message: { success: false, message: 'Too many requests. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -63,7 +64,7 @@ const authLimiter = rateLimit({
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 500,
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -82,17 +83,6 @@ app.get('/health', (req, res) =>
   res.json({ success: true, status: 'ok', env: process.env.NODE_ENV })
 );
 
-// Temporary debug endpoint — REMOVE after OAuth is working
-app.get('/debug-oauth', (req, res) =>
-  res.json({
-    BACKEND_URL:         process.env.BACKEND_URL || '❌ NOT SET',
-    FRONTEND_URL:        process.env.FRONTEND_URL || '❌ NOT SET',
-    GOOGLE_CLIENT_ID:    process.env.GOOGLE_CLIENT_ID ? `✅ set (${process.env.GOOGLE_CLIENT_ID.slice(0, 10)}...)` : '❌ NOT SET',
-    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ? '✅ set' : '❌ NOT SET',
-    callbackURL:         `${process.env.BACKEND_URL || 'http://localhost:5001'}/api/auth/google/callback`,
-  })
-);
-
 // Routes
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/projects', projectRoutes);
@@ -100,6 +90,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/messages', messageRoutes);
 
 // 404
 app.use((req, res) => {

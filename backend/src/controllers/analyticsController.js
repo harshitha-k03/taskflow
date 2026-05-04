@@ -185,3 +185,71 @@ exports.getTeamOverview = async (req, res, next) => {
     next(err);
   }
 };
+
+// GET /api/analytics/member/:userId
+exports.getMemberDetail = async (req, res, next) => {
+  try {
+    const User = require('../models/User');
+    const targetUserId = req.params.userId;
+
+    // Get the target user's profile
+    const profile = await User.findById(targetUserId).select('name email avatar availability createdAt').lean();
+    if (!profile) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    // Find shared projects (projects where both current user and target are members)
+    const myMemberships = await TeamMember.find({ user: req.user._id }).select('project');
+    const myProjectIds = myMemberships.map((m) => m.project);
+
+    const targetMemberships = await TeamMember.find({
+      user: targetUserId,
+      project: { $in: myProjectIds },
+    })
+      .populate('project', 'name color status')
+      .lean();
+
+    const projects = targetMemberships.map((m) => ({
+      ...m.project,
+      role: m.role,
+    }));
+
+    const sharedProjectIds = targetMemberships.map((m) => m.project._id);
+
+    // Task breakdown
+    const [tasksByStatus, recentDone] = await Promise.all([
+      Task.aggregate([
+        { $match: { project: { $in: sharedProjectIds }, assignedTo: require('mongoose').Types.ObjectId.createFromHexString(targetUserId) } },
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ]),
+      Task.find({
+        project: { $in: sharedProjectIds },
+        assignedTo: targetUserId,
+        status: 'Done',
+      })
+        .sort({ completedAt: -1, updatedAt: -1 })
+        .limit(5)
+        .populate('project', 'name color')
+        .select('title project completedAt updatedAt')
+        .lean(),
+    ]);
+
+    const statusMap = tasksByStatus.reduce((acc, s) => { acc[s._id] = s.count; return acc; }, {});
+
+    res.json({
+      success: true,
+      data: {
+        profile,
+        projects,
+        taskStats: {
+          done: statusMap.Done || 0,
+          inProgress: statusMap['In Progress'] || 0,
+          inReview: statusMap['In Review'] || 0,
+          toDo: statusMap['To Do'] || 0,
+          total: Object.values(statusMap).reduce((a, b) => a + b, 0),
+        },
+        recentDone,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};

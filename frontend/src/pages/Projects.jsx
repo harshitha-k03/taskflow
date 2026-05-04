@@ -8,6 +8,7 @@ import * as projectApi from '../api/projects';
 import Modal from '../components/Common/Modal';
 import ProjectForm from '../components/Projects/ProjectForm';
 import { format } from 'date-fns';
+import { SkeletonProjectGrid } from '../components/Common/SkeletonCard';
 
 const STATUS_CONFIG = {
   Active: { color: 'text-success-600', bg: 'bg-success-100', darkText: 'dark:text-success-400', darkBg: 'dark:bg-success-900/30' },
@@ -78,9 +79,7 @@ export default function Projects() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 size={40} className="animate-spin text-primary-500" />
-        </div>
+        <SkeletonProjectGrid />
       ) : projects.length === 0 ? (
         <div className="card flex flex-col items-center justify-center py-20 text-center gap-6 bg-neutral-50 dark:bg-neutral-900/50 border-dashed">
           <div className="w-20 h-20 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
@@ -165,6 +164,24 @@ export default function Projects() {
                       </div>
                     )}
                   </div>
+
+                  {/* Progress bar */}
+                  {(project.taskCount || 0) > 0 && (
+                    <div className="mt-1">
+                      <div className="flex justify-between items-center mb-1.5">
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Progress</span>
+                        <span className="text-[10px] font-black text-primary-600 dark:text-primary-400">
+                          {project.doneCount || 0}/{project.taskCount || 0}
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-primary-500 to-emerald-500 rounded-full transition-all duration-700"
+                          style={{ width: `${Math.round(((project.doneCount || 0) / (project.taskCount || 1)) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex border-t border-neutral-100 dark:border-neutral-800">

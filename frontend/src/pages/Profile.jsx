@@ -1,13 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   User, Mail, Lock, Save, Loader2, Shield, Calendar, KeyRound,
-  CheckCircle, AlertCircle, Wifi, WifiOff, Coffee,
+  CheckCircle, AlertCircle, Wifi, WifiOff, Coffee, Sparkles, Link2,
+  Eye, EyeOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { updateUser } from '../store/authSlice';
 import * as authApi from '../api/auth';
 import { updateAvailability } from '../api/tasks';
+
+const AVATAR_PRESETS = [
+  { seed: 'Felix',  label: 'Felix'  },
+  { seed: 'Aneka',  label: 'Aneka'  },
+  { seed: 'Leo',    label: 'Leo'    },
+  { seed: 'Mia',    label: 'Mia'    },
+  { seed: 'Nova',   label: 'Nova'   },
+  { seed: 'Zara',   label: 'Zara'   },
+  { seed: 'Kai',    label: 'Kai'    },
+  { seed: 'Luna',   label: 'Luna'   },
+].map((a) => ({ ...a, url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${a.seed}` }));
 
 export default function Profile() {
   const dispatch = useDispatch();
@@ -20,8 +32,13 @@ export default function Profile() {
   const [passLoading, setPassLoading] = useState(false);
   const [passError, setPassError] = useState('');
   const [passSuccess, setPassSuccess] = useState(false);
-  const [availability, setAvailability] = useState(user?.availability?.status || 'available');
+  const availability = user?.availability?.status || 'available';
   const [availLoading, setAvailLoading] = useState(false);
+  const [showCustomUrl, setShowCustomUrl] = useState(false);
+  const [customAvatarUrl, setCustomAvatarUrl] = useState('');
+  const [avatarSaving, setAvatarSaving] = useState(false);
+  const [pendingAvatar, setPendingAvatar] = useState(null);
+  const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
 
   const AVAIL_OPTIONS = [
     { key: 'available', label: 'Available',     icon: Wifi,    bg: 'bg-emerald-500', ring: 'ring-emerald-400', light: 'bg-emerald-50 text-emerald-700 border-emerald-200', dark: 'dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800' },
@@ -29,19 +46,51 @@ export default function Profile() {
     { key: 'ooo',       label: 'Out of Office',  icon: WifiOff, bg: 'bg-red-500',     ring: 'ring-red-400',     light: 'bg-red-50 text-red-700 border-red-200',           dark: 'dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'           },
   ];
 
+  // Refresh user data from backend on mount (sync avatar, etc.)
+  useEffect(() => {
+    authApi.getMe().then((res) => {
+      if (res.data.user) {
+        dispatch(updateUser(res.data.user));
+        setProfileForm((f) => ({ ...f, name: res.data.user.name || f.name, avatar: res.data.user.avatar || '' }));
+      }
+    }).catch(() => {});
+  }, [dispatch]);
+
   const handleAvailability = async (status) => {
     if (status === availability) return;
     setAvailLoading(true);
     try {
       await updateAvailability(status);
-      setAvailability(status);
-      dispatch(updateUser({ ...user, availability: { status } }));
+      dispatch(updateUser({ availability: { status } }));
       toast.success(`Status set to ${AVAIL_OPTIONS.find(o => o.key === status)?.label}!`);
     } catch (err) {
       toast.error('Failed to update status');
     } finally {
       setAvailLoading(false);
     }
+  };
+
+  const confirmAvatar = async () => {
+    if (!pendingAvatar) return;
+    setAvatarSaving(true);
+    try {
+      const res = await authApi.updateProfile({ name: user.name, avatar: pendingAvatar });
+      dispatch(updateUser(res.data.user));
+      setProfileForm(f => ({ ...f, avatar: pendingAvatar }));
+      toast.success('Avatar updated!');
+      setPendingAvatar(null);
+    } catch (err) {
+      toast.error('Failed to update avatar');
+    } finally {
+      setAvatarSaving(false);
+    }
+  };
+
+  const applyCustomAvatar = () => {
+    if (!customAvatarUrl.trim()) return;
+    setPendingAvatar(customAvatarUrl.trim());
+    setShowCustomUrl(false);
+    setCustomAvatarUrl('');
   };
 
   if (!user) {
@@ -105,8 +154,11 @@ export default function Profile() {
           style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, white 0%, transparent 60%)' }}
         />
         <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-6">
-          <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-4xl font-black shadow-lg border-2 border-white/30 flex-shrink-0">
-            {initial}
+          <div className="relative w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-4xl font-black shadow-lg border-2 border-white/30 flex-shrink-0 overflow-hidden">
+            {(pendingAvatar || user.avatar) ? (
+              <img src={pendingAvatar || user.avatar} alt={user.name} className="w-full h-full object-cover" />
+            ) : initial}
+            {pendingAvatar && <div className="absolute inset-0 rounded-2xl ring-3 ring-amber-400 animate-pulse" />}
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-bold tracking-tight truncate">{user.name}</h1>
@@ -127,6 +179,89 @@ export default function Profile() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ── Avatar Picker Card ── */}
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl p-xl shadow-sm">
+        <div className="flex items-center gap-3 mb-xl pb-lg border-b border-neutral-100 dark:border-neutral-800">
+          <div className="w-10 h-10 rounded-lg bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center">
+            <Sparkles size={20} className="text-violet-600 dark:text-violet-400" />
+          </div>
+          <div>
+            <h2 className="text-h3 font-bold text-neutral-900 dark:text-neutral-50">Choose Avatar</h2>
+            <p className="text-body-sm text-neutral-500">Pick a preset or use a custom image URL</p>
+          </div>
+          {avatarSaving && <Loader2 size={16} className="ml-auto animate-spin text-primary-500" />}
+        </div>
+
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-3 mb-lg">
+          {AVATAR_PRESETS.map((preset) => {
+            const isCurrent = user.avatar === preset.url;
+            const isPending = pendingAvatar === preset.url;
+            return (
+              <button
+                key={preset.seed}
+                onClick={() => setPendingAvatar(preset.url)}
+                disabled={avatarSaving}
+                className={`group flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all duration-150 ${
+                  isPending
+                    ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 ring-2 ring-amber-400 ring-offset-2 ring-offset-white dark:ring-offset-neutral-900 scale-[1.05] shadow-md'
+                    : isCurrent
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 ring-2 ring-primary-400 ring-offset-2 ring-offset-white dark:ring-offset-neutral-900 scale-[1.05] shadow-md'
+                      : 'border-transparent hover:border-neutral-200 dark:hover:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800/50'
+                }`}
+              >
+                <img
+                  src={preset.url}
+                  alt={preset.label}
+                  className={`w-12 h-12 rounded-full transition-transform duration-200 ${isCurrent || isPending ? '' : 'group-hover:scale-110'}`}
+                />
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                  isPending ? 'text-amber-600 dark:text-amber-400' : isCurrent ? 'text-primary-600 dark:text-primary-400' : 'text-neutral-400'
+                }`}>{preset.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Save / Cancel bar */}
+        {pendingAvatar && pendingAvatar !== user.avatar && (
+          <div className="flex items-center gap-3 mb-lg p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+            <img src={pendingAvatar} alt="preview" className="w-10 h-10 rounded-full border-2 border-amber-400" />
+            <p className="flex-1 text-sm font-semibold text-amber-700 dark:text-amber-300">Preview — click Save to apply</p>
+            <button onClick={confirmAvatar} disabled={avatarSaving} className="btn-primary text-xs">
+              {avatarSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save
+            </button>
+            <button onClick={() => setPendingAvatar(null)} disabled={avatarSaving} className="btn-secondary text-xs">Cancel</button>
+          </div>
+        )}
+
+        {/* Custom URL option */}
+        {!showCustomUrl ? (
+          <button
+            onClick={() => setShowCustomUrl(true)}
+            className="flex items-center gap-2 text-body-sm font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+          >
+            <Link2 size={14} /> Use custom image URL
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <input
+              value={customAvatarUrl}
+              onChange={(e) => setCustomAvatarUrl(e.target.value)}
+              className="input flex-1"
+              placeholder="https://example.com/your-photo.jpg"
+              type="url"
+              onKeyDown={(e) => e.key === 'Enter' && applyCustomAvatar()}
+            />
+            <button onClick={applyCustomAvatar} disabled={avatarSaving || !customAvatarUrl.trim()} className="btn-primary">
+              Apply
+            </button>
+            <button onClick={() => { setShowCustomUrl(false); setCustomAvatarUrl(''); }} className="btn-secondary">
+              Cancel
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Profile Info Card */}
@@ -247,41 +382,56 @@ export default function Profile() {
         <form onSubmit={handlePasswordSave} className="space-y-md">
           <div className="flex flex-col gap-1.5">
             <label className="label">Current Password</label>
-            <input
-              type="password"
-              value={passForm.currentPassword}
-              onChange={e => setPassForm(f => ({ ...f, currentPassword: e.target.value }))}
-              className="input"
-              required
-              placeholder="••••••••"
-              autoComplete="current-password"
-            />
+            <div className="relative">
+              <input
+                type={showPasswords.current ? 'text' : 'password'}
+                value={passForm.currentPassword}
+                onChange={e => setPassForm(f => ({ ...f, currentPassword: e.target.value }))}
+                className="input pr-10"
+                required
+                placeholder="••••••••"
+                autoComplete="current-password"
+              />
+              <button type="button" onClick={() => setShowPasswords(p => ({ ...p, current: !p.current }))} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors">
+                {showPasswords.current ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-md">
             <div className="flex flex-col gap-1.5">
               <label className="label">New Password</label>
-              <input
-                type="password"
-                value={passForm.newPassword}
-                onChange={e => setPassForm(f => ({ ...f, newPassword: e.target.value }))}
-                className="input"
-                required
-                minLength={8}
-                placeholder="••••••••"
-                autoComplete="new-password"
-              />
+              <div className="relative">
+                <input
+                  type={showPasswords.new ? 'text' : 'password'}
+                  value={passForm.newPassword}
+                  onChange={e => setPassForm(f => ({ ...f, newPassword: e.target.value }))}
+                  className="input pr-10"
+                  required
+                  minLength={8}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                />
+                <button type="button" onClick={() => setShowPasswords(p => ({ ...p, new: !p.new }))} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors">
+                  {showPasswords.new ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="label">Confirm New Password</label>
-              <input
-                type="password"
-                value={passForm.confirmPassword}
-                onChange={e => setPassForm(f => ({ ...f, confirmPassword: e.target.value }))}
-                className="input"
-                required
-                placeholder="••••••••"
-                autoComplete="new-password"
-              />
+              <div className="relative">
+                <input
+                  type={showPasswords.confirm ? 'text' : 'password'}
+                  value={passForm.confirmPassword}
+                  onChange={e => setPassForm(f => ({ ...f, confirmPassword: e.target.value }))}
+                  className="input pr-10"
+                  required
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                />
+                <button type="button" onClick={() => setShowPasswords(p => ({ ...p, confirm: !p.confirm }))} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors">
+                  {showPasswords.confirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
           </div>
           <div className="p-md bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">

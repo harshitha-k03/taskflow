@@ -65,9 +65,8 @@
 ::-webkit-scrollbar-thumb { @apply bg-slate-300 dark:bg-neutral-700 rounded-full; }
 ::-webkit-scrollbar-thumb:hover { @apply bg-slate-400 dark:bg-neutral-600; }
 
-/* Animations */
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95) translateY(4px); }
+  from { opacity: 0; transform: scale(0.98) translateY(6px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
@@ -81,8 +80,13 @@
   to { opacity: 1; }
 }
 
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .animate-scale-in {
-  animation: scaleIn 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: scaleIn 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .animate-slide-down {
@@ -93,6 +97,37 @@
   animation: fadeIn 300ms ease-out;
 }
 
-.page-enter {
-  @apply animate-scale-in;
+.animate-fade-in-up {
+  animation: fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+.page-enter {
+  animation: fadeInUp 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Shimmer for skeleton loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(0,0,0,0.04) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+html.dark .animate-shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.04) 50%, transparent 75%);
+  background-size: 200% 100%;
+}
+

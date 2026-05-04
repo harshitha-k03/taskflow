@@ -58,12 +58,19 @@ function TaskCard({ task, isDragging = false, dragListeners, dragAttributes }) {
           </div>
           {task.assignedTo && (
             <div className="flex items-center gap-2 mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-800">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-[10px] font-bold">
-                {task.assignedTo?.name ? task.assignedTo.name.charAt(0).toUpperCase() : '?'}
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-[10px] font-bold overflow-hidden">
+                {task.assignedTo?.avatar ? (
+                  <img src={task.assignedTo.avatar} alt={task.assignedTo.name} className="w-full h-full object-cover" />
+                ) : (task.assignedTo?.name ? task.assignedTo.name.charAt(0).toUpperCase() : '?')}
               </div>
-              <span className="text-[11px] text-neutral-500 font-medium truncate">
+              <span className="text-[11px] text-neutral-500 font-medium truncate flex-1">
                 {task.assignedTo.name}
               </span>
+              {task.commentCount > 0 && (
+                <span className="flex items-center gap-1 text-[10px] font-bold text-neutral-400" title={`${task.commentCount} comment${task.commentCount > 1 ? 's' : ''}`}>
+                  💬 {task.commentCount}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -111,9 +118,10 @@ function Column({ status, tasks, onAdd }) {
         <div className="flex flex-col flex-1 min-h-[200px]">
           {colTasks.map(task => <SortableCard key={task._id} task={task} />)}
           {colTasks.length === 0 && (
-            <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-lg py-12 opacity-40">
-              <CheckSquare size={32} className="text-neutral-400 mb-2" />
-              <p className="text-[11px] font-medium">Empty column</p>
+            <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-lg py-12 opacity-50 hover:opacity-70 transition-opacity">
+              <CheckSquare size={28} className="text-neutral-400 mb-2" />
+              <p className="text-[11px] font-bold text-neutral-500">No tasks</p>
+              <p className="text-[10px] text-neutral-400 mt-0.5">Drag tasks here or click +</p>
             </div>
           )}
         </div>

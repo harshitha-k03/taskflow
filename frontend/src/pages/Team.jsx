@@ -1,6 +1,11 @@
-import { useEffect, useState } from 'react';
-import { Loader2, Users, Mail, CheckSquare, Wifi, WifiOff, Coffee } from 'lucide-react';
-import { getTeamOverview } from '../api/tasks';
+import { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import * as Ably from 'ably';
+import {
+  Loader2, Users, Mail, CheckSquare, Wifi, WifiOff, Coffee,
+  X, FolderKanban, MessageSquare, CheckCircle, Clock, AlertTriangle,
+} from 'lucide-react';
+import { getTeamOverview, getMemberDetail } from '../api/tasks';
 
 const AVAILABILITY = {
   available: {
@@ -26,15 +31,174 @@ const AVAILABILITY = {
   },
 };
 
+function MemberDetailPanel({ memberId, onClose }) {
+  const navigate = useNavigate();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!memberId) return;
+    setLoading(true);
+    getMemberDetail(memberId)
+      .then((r) => setData(r.data.data))
+      .catch(() => setData(null))
+      .finally(() => setLoading(false));
+  }, [memberId]);
+
+  if (!memberId) return null;
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity" onClick={onClose} />
+
+      {/* Panel */}
+      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white dark:bg-neutral-900 shadow-2xl z-50 flex flex-col animate-slide-in-right overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
+          <h3 className="text-h3 font-bold text-neutral-900 dark:text-neutral-50">Member Details</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+            <X size={18} className="text-neutral-500" />
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <Loader2 size={32} className="animate-spin text-primary-500" />
+          </div>
+        ) : !data ? (
+          <div className="flex-1 flex items-center justify-center text-neutral-400 text-sm">Could not load member details.</div>
+        ) : (
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+            {/* Profile */}
+            <div className="flex items-center gap-4">
+              <div className="relative w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-2xl font-bold">
+                {data.profile.avatar ? (
+                  <img src={data.profile.avatar} alt={data.profile.name} className="w-full h-full object-cover" />
+                ) : data.profile.name?.charAt(0).toUpperCase()}
+                <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white dark:border-neutral-900 ${
+                  AVAILABILITY[data.profile.availability?.status]?.dot || 'bg-emerald-500'
+                }`} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-lg font-bold text-neutral-900 dark:text-neutral-50 truncate">{data.profile.name}</h4>
+                <p className="text-sm text-neutral-500 truncate">{data.profile.email}</p>
+                <div className={`inline-flex items-center gap-1.5 mt-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                  AVAILABILITY[data.profile.availability?.status]?.bg || ''
+                } ${AVAILABILITY[data.profile.availability?.status]?.text || ''}`}>
+                  {AVAILABILITY[data.profile.availability?.status]?.label || 'Available'}
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <button
+              onClick={() => { onClose(); navigate(`/chat?dm=${memberId}`); }}
+              className="w-full btn-primary text-sm justify-center"
+            >
+              <MessageSquare size={16} /> Send Message
+            </button>
+
+            {/* Task Stats */}
+            <div>
+              <h5 className="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-3">Task Overview</h5>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Completed', value: data.taskStats.done, icon: CheckCircle, color: 'text-emerald-500' },
+                  { label: 'In Progress', value: data.taskStats.inProgress, icon: Clock, color: 'text-blue-500' },
+                  { label: 'To Do', value: data.taskStats.toDo, icon: CheckSquare, color: 'text-neutral-400' },
+                  { label: 'In Review', value: data.taskStats.inReview, icon: AlertTriangle, color: 'text-violet-500' },
+                ].map(({ label, value, icon: Icon, color }) => (
+                  <div key={label} className="bg-neutral-50 dark:bg-neutral-800/50 rounded-xl p-3 flex items-center gap-3">
+                    <Icon size={16} className={color} />
+                    <div>
+                      <p className="text-lg font-bold text-neutral-900 dark:text-neutral-50">{value}</p>
+                      <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">{label}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Projects */}
+            <div>
+              <h5 className="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-3">Projects ({data.projects.length})</h5>
+              <div className="space-y-2">
+                {data.projects.map((p) => (
+                  <div key={p._id} className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-700">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: p.color || '#6366f1' }}>
+                      <FolderKanban size={14} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-neutral-900 dark:text-neutral-50 truncate">{p.name}</p>
+                      <p className="text-[10px] text-neutral-400 font-medium">{p.role} · {p.status}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Recent Done */}
+            {data.recentDone.length > 0 && (
+              <div>
+                <h5 className="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-3">Recently Completed</h5>
+                <div className="space-y-2">
+                  {data.recentDone.map((t) => (
+                    <div key={t._id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors">
+                      <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 truncate">{t.title}</p>
+                        <p className="text-[10px] text-neutral-400">{t.project?.name}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 export default function Team() {
   const [team, setTeam] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const ablyRef = useRef(null);
 
   useEffect(() => {
     getTeamOverview()
       .then((r) => setTeam(r.data.data))
       .catch(() => {})
       .finally(() => setLoading(false));
+  }, []);
+
+  // Subscribe to real-time status changes
+  useEffect(() => {
+    const key = import.meta.env.VITE_ABLY_KEY;
+    if (!key) return;
+
+    const client = new Ably.Realtime({ key });
+    ablyRef.current = client;
+    const channel = client.channels.get('taskflow:status');
+
+    channel.subscribe('status_change', (msg) => {
+      const { userId, status } = msg.data;
+      setTeam((prev) =>
+        prev.map((m) =>
+          m._id === userId
+            ? { ...m, availability: { ...m.availability, status } }
+            : m
+        )
+      );
+    });
+
+    return () => {
+      channel.unsubscribe();
+      client.close();
+    };
   }, []);
 
   if (loading) {
@@ -69,7 +233,7 @@ export default function Team() {
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />{grouped.busy.length} Busy
           </span>
           <span className="flex items-center gap-1.5 text-red-600 dark:text-red-400 font-semibold">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500" />{grouped.ooo.length} OOO
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500" />{grouped.ooo.length} Out of Office
           </span>
         </div>
       </div>
@@ -90,9 +254,10 @@ export default function Team() {
             const initial = member.name?.charAt(0).toUpperCase() || '?';
 
             return (
-              <div
+              <button
                 key={member._id}
-                className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col gap-4"
+                onClick={() => setSelectedMember(member._id)}
+                className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col gap-4 text-left cursor-pointer group"
               >
                 {/* Top row: avatar + name + availability */}
                 <div className="flex items-start gap-4">
@@ -115,7 +280,7 @@ export default function Team() {
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-slate-900 dark:text-slate-50 truncate text-body-lg">
+                    <p className="font-bold text-slate-900 dark:text-slate-50 truncate text-body-lg group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                       {member.name}
                     </p>
                     <div className="flex items-center gap-1.5 mt-0.5">
@@ -146,11 +311,14 @@ export default function Team() {
                     <p className={`text-xs font-bold mt-0.5 ${avail.text}`}>{avail.label}</p>
                   </div>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
       )}
+
+      {/* Detail Panel */}
+      <MemberDetailPanel memberId={selectedMember} onClose={() => setSelectedMember(null)} />
     </div>
   );
 }

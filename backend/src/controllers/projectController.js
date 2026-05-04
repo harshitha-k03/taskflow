@@ -65,9 +65,20 @@ exports.getProjects = async (req, res, next) => {
       taskCountMap[t._id.toString()] = t.count;
     });
 
+    // Get done task counts per project
+    const doneCounts = await Task.aggregate([
+      { $match: { project: { $in: projectIds }, status: 'Done' } },
+      { $group: { _id: '$project', count: { $sum: 1 } } },
+    ]);
+    const doneCountMap = {};
+    doneCounts.forEach((t) => {
+      doneCountMap[t._id.toString()] = t.count;
+    });
+
     const result = projectsWithRole.map((p) => ({
       ...p,
       taskCount: taskCountMap[p._id.toString()] || 0,
+      doneCount: doneCountMap[p._id.toString()] || 0,
     }));
 
     res.json({ success: true, projects: result });

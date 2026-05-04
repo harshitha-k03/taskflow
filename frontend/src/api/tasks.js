@@ -13,4 +13,6 @@ export const addComment = (id, text) => api.post(`/tasks/${id}/comments`, { text
 export const getDashboard = () => api.get('/analytics/dashboard');
 export const getTeamOverview = () => api.get('/analytics/team-overview');
 export const updateAvailability = (status) => api.patch('/users/availability', { status });
+export const getMemberDetail = (userId) => api.get(`/analytics/member/${userId}`);
+export const resetAvatar = () => api.patch('/users/reset-avatar');
 

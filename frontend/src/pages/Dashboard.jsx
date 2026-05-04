@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { getDashboard, getTeamOverview } from '../api/tasks';
 import { format, isPast, isToday, differenceInDays, isTomorrow } from 'date-fns';
+import { SkeletonDashboard } from '../components/Common/SkeletonCard';
 
 const PRIORITY_COLORS = { Low: '#9ca3af', Medium: '#3b82f6', High: '#f59e0b', Urgent: '#ef4444' };
 const STATUS_COLORS = { 'To Do': '#6b7280', 'In Progress': '#3b82f6', 'In Review': '#8b5cf6', Done: '#10b981' };
@@ -84,11 +85,7 @@ export default function Dashboard() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 size={48} className="animate-spin text-primary-500" />
-      </div>
-    );
+    return <SkeletonDashboard />;
   }
 
   const statusData = data ? Object.entries(data.tasksByStatus).map(([name, value]) => ({ name, value })) : [];
@@ -157,6 +154,11 @@ export default function Dashboard() {
         <StatCard icon={CheckSquare} label="Total Tasks" value={data?.totalTasks ?? 0} colorClass="from-amber-500 to-orange-600" />
         <StatCard icon={TrendingUp} label="Completion Rate" value={`${data?.completionRate ?? 0}%`} colorClass="from-emerald-500 to-teal-600" />
         <StatCard icon={Clock} label="Done This Week" value={data?.completedThisWeek ?? 0} sub={`${data?.completedThisMonth ?? 0} this month`} colorClass="from-purple-600 to-violet-700" />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-lg -mt-2">
+        <StatCard icon={CheckCircle} label="Completed" value={data?.tasksByStatus?.Done ?? 0} sub={`${data?.completionRate ?? 0}% of all tasks`} colorClass="from-emerald-500 to-green-600" />
+        <StatCard icon={Clock} label="Pending" value={(data?.tasksByStatus?.['To Do'] ?? 0) + (data?.tasksByStatus?.['In Progress'] ?? 0) + (data?.tasksByStatus?.['In Review'] ?? 0)} sub="To Do + In Progress + In Review" colorClass="from-sky-500 to-blue-600" />
+        <StatCard icon={AlertTriangle} label="Overdue" value={data?.overdueTasks ?? 0} sub={data?.overdueTasks > 0 ? 'Needs attention!' : 'All on track'} colorClass="from-rose-500 to-red-600" />
       </div>
 
       {/* ── Smart Focus + Deadline Alerts row ── */}
@@ -364,7 +366,7 @@ export default function Dashboard() {
               const avail = AVAILABILITY_COLORS[member.availability?.status] || AVAILABILITY_COLORS.available;
               const memberInitial = member.name?.charAt(0).toUpperCase() || '?';
               return (
-                <div key={member._id} className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-800 hover:border-primary-200 dark:hover:border-primary-800 transition-all">
+              <Link to="/team" key={member._id} className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-800 hover:border-primary-200 dark:hover:border-primary-800 hover:shadow-md transition-all cursor-pointer group">
                   <div className="relative shrink-0">
                     {member.avatar ? (
                       <img src={member.avatar} alt={member.name} className="w-10 h-10 rounded-full object-cover" />
@@ -376,13 +378,13 @@ export default function Dashboard() {
                     <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-neutral-900 ${avail.bg}`} title={avail.label} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-body-sm font-bold truncate">{member.name}</p>
+                    <p className="text-body-sm font-bold truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{member.name}</p>
                     <p className={`text-[10px] font-semibold uppercase tracking-wider ${avail.text}`}>{avail.label}</p>
                     {member.openTasks !== undefined && (
                       <p className="text-[10px] text-neutral-400 font-medium">{member.openTasks} open tasks</p>
                     )}
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

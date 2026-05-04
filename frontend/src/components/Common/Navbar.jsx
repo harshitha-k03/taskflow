@@ -1,6 +1,6 @@
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { Bell, Search, Sun, Moon, Check, X } from 'lucide-react';
+import { Bell, Search, Sun, Moon, Check, X, Command } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { toggleTheme } from '../../store/themeSlice';
 import {
@@ -101,6 +101,26 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
+  // ⌘K / Ctrl+K shortcut to focus search
+  const searchInputRef = useRef(null);
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        setShowSearch(true);
+      }
+      if (e.key === 'Escape' && showSearch) {
+        setShowSearch(false);
+        setSearchQuery('');
+        setSearchResults([]);
+        searchInputRef.current?.blur();
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [showSearch]);
+
   // Debounced search
   const handleSearch = useCallback((q) => {
     setSearchQuery(q);
@@ -168,6 +188,7 @@ export default function Navbar() {
           <div className={`hidden md:flex items-center border rounded-lg px-3 py-1.5 transition-all w-56 focus-within:w-72 focus-within:ring-2 focus-within:ring-primary-500/30 ${inputBg}`}>
             <Search size={15} className={`mr-2 shrink-0 ${isDark ? 'text-neutral-500' : 'text-slate-400'}`} />
             <input
+              ref={searchInputRef}
               type="text"
               placeholder="Search tasks & projects..."
               value={searchQuery}
@@ -175,10 +196,14 @@ export default function Navbar() {
               onFocus={() => setShowSearch(true)}
               className="bg-transparent border-none outline-none text-body-sm w-full"
             />
-            {searchQuery && (
+            {searchQuery ? (
               <button onClick={() => { setSearchQuery(''); setSearchResults([]); }} className="ml-1">
                 <X size={13} className={isDark ? 'text-neutral-500' : 'text-slate-400'} />
               </button>
+            ) : (
+              <kbd className={`hidden lg:inline-flex items-center gap-0.5 ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold border shrink-0 ${isDark ? 'border-neutral-700 text-neutral-500 bg-neutral-800/50' : 'border-slate-300 text-slate-400 bg-white'}`}>
+                ⌘K
+              </kbd>
             )}
           </div>
 

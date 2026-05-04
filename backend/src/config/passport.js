@@ -11,7 +11,6 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      // Read BACKEND_URL at request time via a function so env is always current
       callbackURL: `${process.env.BACKEND_URL || 'http://localhost:5001'}/api/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
@@ -20,19 +19,32 @@ passport.use(
         if (!email) return done(new Error('No email returned from Google'), null);
 
         const name = sanitizeName(profile.displayName);
+        const googlePhoto = profile.photos?.[0]?.value || null;
 
-        // 1. Returning Google user
+        // 1. Returning Google user — always refresh googleAvatar
         let user = await User.findOne({ googleId: profile.id });
 
-        if (!user) {
+        if (user) {
+          if (googlePhoto) {
+            const oldGoogleAvatar = user.googleAvatar;
+            user.googleAvatar = googlePhoto;
+            // Restore avatar if user hasn't customized it, or first time migration
+            if (!user.avatar || !oldGoogleAvatar || user.avatar === oldGoogleAvatar) {
+              user.avatar = googlePhoto;
+            }
+          }
+          user.lastLogin = new Date();
+          await user.save({ validateBeforeSave: false });
+        } else {
           // 2. Existing local account — link Google
           user = await User.findOne({ email });
 
           if (user) {
             user.googleId = profile.id;
             user.authProvider = 'google';
-            if (!user.avatar && profile.photos?.[0]?.value) {
-              user.avatar = profile.photos[0].value;
+            if (googlePhoto) {
+              user.googleAvatar = googlePhoto;
+              user.avatar = googlePhoto;
             }
             await user.save({ validateBeforeSave: false });
           } else {
@@ -42,7 +54,8 @@ passport.use(
               email,
               googleId: profile.id,
               authProvider: 'google',
-              avatar: profile.photos?.[0]?.value || null,
+              avatar: googlePhoto,
+              googleAvatar: googlePhoto,
               isEmailVerified: true,
               availability: { status: 'available' },
             });
