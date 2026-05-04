@@ -1,7 +1,7 @@
 # 🚀 TaskFlow — Team Task Manager
 
 > **Live Demo:** [https://taskflow-six-ashen.vercel.app](https://taskflow-six-ashen.vercel.app)  
-> **Backend API:** [https://taskflow-rm4o.onrender.com](https://taskflow-rm4o.onrender.com)
+> **Backend API:** [https://taskflow-production-f643.up.railway.app](https://taskflow-production-f643.up.railway.app)
 
 A full-stack web application for project and task management with role-based access control, Kanban board, and analytics.
 
@@ -32,7 +32,7 @@ A full-stack web application for project and task management with role-based acc
 | **Styling** | Tailwind CSS |
 | **Drag & Drop** | dnd-kit |
 | **Charts** | Recharts |
-| **Deployment** | Railway |
+| **Deployment** | Railway (Backend) + Vercel (Frontend) |
 
 ---
 
@@ -124,26 +124,34 @@ Frontend runs on `http://localhost:5173`
 
 ---
 
-## 🚀 Deployment (Railway)
+## 🚀 Deployment
 
-### Backend
-1. Push to GitHub
-2. Create Railway project → connect repo
-3. Add MongoDB plugin
-4. Set environment variables:
-   ```
-   NODE_ENV=production
-   MONGODB_URI=<from Railway>
-   JWT_SECRET=<random 64-char string>
-   REFRESH_TOKEN_SECRET=<random 64-char string>
-   FRONTEND_URL=<your frontend Railway URL>
-   ```
-5. Railway auto-deploys on push
+### Backend — Railway
+- **URL:** `https://taskflow-production-f643.up.railway.app`
+- **Root Directory:** `backend`
+- **Build Command:** `npm install`
+- **Start Command:** `npm start`
 
-### Frontend
-1. Set `VITE_API_URL=<backend Railway URL>/api`
-2. Build command: `npm run build`
-3. Output directory: `dist`
+Environment variables set on Railway:
+```
+NODE_ENV=production
+MONGODB_URI=<MongoDB Atlas URI>
+JWT_SECRET=<random 64-char string>
+JWT_EXPIRE=15m
+REFRESH_TOKEN_SECRET=<random 64-char string>
+REFRESH_TOKEN_EXPIRE=7d
+FRONTEND_URL=https://taskflow-six-ashen.vercel.app
+```
+
+### Frontend — Vercel
+- **URL:** `https://taskflow-six-ashen.vercel.app`
+- **Build Command:** `npm run build`
+- **Output Directory:** `dist`
+
+Environment variable set on Vercel:
+```
+VITE_API_URL=https://taskflow-production-f643.up.railway.app/api
+```
 
 ---
 
