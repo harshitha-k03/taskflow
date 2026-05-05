@@ -9,7 +9,13 @@ A full-stack team collaboration platform with project management, real-time chat
 
 ## ✨ Features
 
+<img src="docs/screenshots/dashboard.png" width="100%" alt="Dashboard" style="border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);" />
+
 ### Core
+
+<img src="docs/screenshots/kanban-board.png" width="100%" alt="Kanban Board" style="border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);" />
+<img src="docs/screenshots/projects.png" width="100%" alt="Projects Directory" style="border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);" />
+
 - ✅ **Google OAuth + JWT Auth** — Sign in with Google or email/password, with refresh tokens and password reset
 - ✅ **Project Management** — Create, edit, archive projects with team invites and role management
 - ✅ **Kanban Board** — Drag-and-drop task management (powered by dnd-kit) with filters and search
@@ -18,13 +24,22 @@ A full-stack team collaboration platform with project management, real-time chat
 - ✅ **Dashboard Analytics** — Charts, completion rates, smart priority engine, overdue alerts
 
 ### Real-Time Collaboration
+
+<img src="docs/screenshots/chat.png" width="100%" alt="Chat" style="border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);" />
+<img src="docs/screenshots/team.png" width="100%" alt="Team Overview" style="border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);" />
+
 - ✅ **Live Chat** — Team channels + direct messages with Ably real-time transport
 - ✅ **Typing Indicators** — See when teammates are typing in real-time
 - ✅ **Presence & Status** — Available / Busy / Out of Office with live status broadcasting
 - ✅ **Message Notifications** — Sonner toast notifications for incoming messages with clickable actions
 - ✅ **Unread Badges** — Slack-style unread count badges on sidebar and chat tabs
 
-### Quality of Life
+### AI Assistant & Quality of Life
+
+<img src="docs/screenshots/ai-chatbot.png" width="100%" alt="AI Chatbot" style="border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);" />
+<img src="docs/screenshots/profile.png" width="100%" alt="User Profile" style="border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);" />
+
+- ✅ **TaskBot AI** — Conversational project assistant built into the application
 - ✅ **⌘K Quick Search** — Global keyboard shortcut to search tasks & projects instantly
 - ✅ **Collapsible Sidebar** — Toggle to icon-only mode for more screen space (persisted in localStorage)
 - ✅ **Skeleton Loading** — Premium shimmer loading screens instead of plain spinners
@@ -36,25 +51,9 @@ A full-stack team collaboration platform with project management, real-time chat
 
 ---
 
-## 🛠️ Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| **Backend** | Node.js, Express.js |
-| **Database** | MongoDB + Mongoose |
-| **Auth** | JWT (15m access + 7d refresh) + bcrypt + Google OAuth 2.0 (Passport.js) |
-| **Real-Time** | Ably (chat, presence, notifications) |
-| **Frontend** | React 18 + Vite |
-| **State** | Redux Toolkit |
-| **Styling** | Tailwind CSS |
-| **Drag & Drop** | dnd-kit |
-| **Charts** | Recharts |
-| **Notifications** | Sonner (toast) |
-| **Deployment** | Railway (Backend) + Vercel (Frontend) |
-
----
-
 ## 🚦 Quick Start
+
+<img src="docs/screenshots/login.png" width="100%" alt="Login" style="border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);" />
 
 ### Prerequisites
 - Node.js 18+
