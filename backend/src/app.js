@@ -14,6 +14,7 @@ const analyticsRoutes = require('./routes/analytics');
 const notificationRoutes = require('./routes/notifications');
 const userRoutes = require('./routes/users');
 const messageRoutes = require('./routes/messages');
+const chatbotRoutes = require('./routes/chatbot');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -91,6 +92,16 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/messages', messageRoutes);
+
+// Chatbot — stricter rate limit (20 requests per 15 min per user)
+const chatbotLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { success: false, message: 'Chatbot rate limit reached. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/chatbot', chatbotLimiter, chatbotRoutes);
 
 // 404
 app.use((req, res) => {

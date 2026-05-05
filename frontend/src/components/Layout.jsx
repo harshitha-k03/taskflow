@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import Sidebar from './Common/Sidebar';
 import Navbar from './Common/Navbar';
 import NotificationListener from './Common/NotificationListener';
+import AIChatbot from './AIChatbot/AIChatbot';
 
 export default function Layout() {
   const { mode } = useSelector((s) => s.theme);
@@ -17,6 +18,7 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+      <AIChatbot />
     </div>
   );
 }
